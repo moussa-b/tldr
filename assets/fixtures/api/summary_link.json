@@ -1,0 +1,37 @@
+{
+  "thread": {
+    "id": "1lnk4m2",
+    "subreddit": "technology",
+    "title": "EU regulators open an inquiry into app store payment rules",
+    "author": "newsbot_eu",
+    "permalink": "https://www.reddit.com/r/technology/comments/1lnk4m2/eu_regulators_open_an_inquiry_into_app_store/",
+    "createdAt": "2026-10-08T07:15:00Z",
+    "score": 3120,
+    "upvoteRatio": 0.88,
+    "numComments": 487,
+    "isNsfw": false,
+    "selftextExcerpt": null
+  },
+  "analysis": {
+    "language": "en",
+    "shortSummary": "Most commenters welcome the inquiry but doubt it will change much quickly. Developers in the thread describe the fees as a tax on small studios, while a vocal minority defends the stores as a guarantee of security.",
+    "detailedSummary": "Developers dominate the discussion and share concrete numbers about what the commission costs them.\n\nA second group is sceptical of regulators, recalling previous inquiries that took years and ended in small fines.\n\nA minority argues that closed stores protect less technical users from scams and that sideloading would make phones less safe.",
+    "sentiment": "negative",
+    "emotions": [
+      "anger",
+      "hope"
+    ],
+    "toxicity": 0.31,
+    "aiTake": "The thread is less about one inquiry than about trust: developers trust regulators more than platforms, users trust platforms more than the open web."
+  },
+  "meta": {
+    "provider": "anthropic",
+    "model": "claude-haiku-5-5",
+    "commentsAnalyzed": 180,
+    "commentsTotal": 487,
+    "truncated": false,
+    "threadFromCache": true,
+    "generatedAt": "2026-10-08T21:05:02Z",
+    "durationMs": 9120
+  }
+}

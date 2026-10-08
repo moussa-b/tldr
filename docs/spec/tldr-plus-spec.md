@@ -1,6 +1,31 @@
 # [Epic] TL;DR+ — résumé IA de threads Reddit (app mobile Flutter + backend NestJS)
 
-> Statut : VALIDÉ (/spec, quality gate 8/10) — 2026-10-08
+> Statut : VALIDÉ (/spec, quality gate 8/10) — **révisé le 2026-10-09 : backend supprimé (voir ci-dessous)**
+
+## ⚠️ Révision d'architecture (2026-10-09) — tout sur l'appareil
+
+Décision de l'utilisateur : **pas de backend**. L'app lit Reddit elle-même et appelle Gemini / Anthropic / OpenAI directement avec la clé de l'utilisateur. Cette section prime sur le reste du document.
+
+| Section | Statut |
+|---|---|
+| « Contrat API v1 » : `/v1/health`, `/v1/models`, `/v1/keys/validate`, headers `X-App-Key`, `X-Request-Id`, `Idempotency-Key`, rate limit | **Obsolète** (pas de serveur) |
+| « Contrat API v1 » : codes d'erreur, `Types partagés`, normalisation des URL, récupération Reddit, sélection des commentaires (dont R9), prompts, sortie structurée, validation, deadline 90 s (R1) | **Toujours valable, implémenté dans l'app** (`lib/data/engine/`) |
+| « Backend (`tldr-api`) » entier, Postgres, Coolify, R5, ticket #6, critères 13-18, 20, 22, 23 | **Obsolète** |
+| R2 (Idempotency-Key) | Remplacé : la tentative en cours reste mémorisée (`pendingSummary`) ; au retour dans l'app elle est **relancée** (nouvel appel facturé). iOS peut suspendre l'app pendant l'appel : limite acceptée. |
+| R4 (catalogue servi par le backend) | Remplacé : catalogue embarqué `assets/catalog.json` ; changer de modèle = nouvelle version de l'app. La réconciliation d'un modèle mémorisé absent reste active. |
+| R6 (contrat mock ↔ OpenAPI) | Remplacé : `test/data/fixtures_test.dart` parse toutes les fixtures avec les modèles Dart. `docs/api/openapi.yaml` supprimé. |
+| R7 (eval des prompts) | Reporté : à faire côté app (`tool/eval.dart`) quand des clés réelles sont disponibles. |
+| OV1 / R8 (clé qui transite par un serveur) | Résolu : la clé ne va plus qu'au fournisseur IA. |
+
+Accès Reddit depuis l'appareil :
+1. Lien court `/r/<sub>/s/<code>` : `GET` sans suivre les redirections, lecture de `Location` (max 3 sauts).
+2. Si `REDDIT_CLIENT_ID` est fourni (`--dart-define`, app Reddit de type **installed**, sans secret) : jeton app-only `grant_type=https://oauth.reddit.com/grants/installed_client` avec un `device_id` aléatoire persistant, puis `GET https://oauth.reddit.com/comments/<id>?sort=top&limit=500&depth=4&raw_json=1`.
+3. Sinon : `GET https://www.reddit.com/comments/<id>.json?…` (endpoint public), `User-Agent: android:com.bdzapps.tldr:v1.0.0 (by /u/<user>)`.
+
+Appels IA (REST, via dio, sans SDK) : Gemini `generateContent` avec `responseSchema` ; OpenAI `chat/completions` avec `response_format: json_schema` strict ; Anthropic `messages` avec un outil `submit_analysis` forcé. Mapping d'erreurs : 401/403 → `LLM_KEY_INVALID`, 404 modèle → `LLM_MODEL_UNAVAILABLE`, 429 → `LLM_QUOTA_EXCEEDED`, 5xx/réseau → `LLM_UNAVAILABLE`, sortie non conforme après 1 retry → `LLM_OUTPUT_INVALID`.
+
+Vérification de clé (Réglages, D-5) : `GET` de la liste des modèles du fournisseur (appel gratuit).
+ — 2026-10-08
 > Repo mobile : `tldr` (ce projet). Backend : repo séparé, développé par un autre agent à partir de la section « Contrat API » et « Backend ».
 
 ## Context
@@ -53,7 +78,7 @@ Règles transverses :
 
 ---
 
-## Contrat API v1
+## Contrat API v1 (obsolète en tant qu'API HTTP — voir Révision 2026-10-09)
 
 ### Généralités
 
@@ -352,7 +377,7 @@ Headers : `X-App-Key`, `X-LLM-Api-Key`. Body :
 
 ---
 
-## Backend (`tldr-api`, repo séparé)
+## Backend (`tldr-api`, repo séparé) — OBSOLÈTE (révision 2026-10-09)
 
 ### Stack
 

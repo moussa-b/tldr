@@ -1,0 +1,38 @@
+{
+  "thread": {
+    "id": "1xyz98q",
+    "subreddit": "AskReddit",
+    "title": "What's a skill that took you years to learn but you wish you'd started earlier?",
+    "author": "curious_owl",
+    "permalink": "https://www.reddit.com/r/AskReddit/comments/1xyz98q/whats_a_skill_that_took_you_years_to_learn/",
+    "createdAt": "2026-10-06T18:40:00Z",
+    "score": 24310,
+    "upvoteRatio": 0.96,
+    "numComments": 5412,
+    "isNsfw": false,
+    "selftextExcerpt": null
+  },
+  "analysis": {
+    "language": "en",
+    "shortSummary": "Commenters overwhelmingly point to slow, compounding skills: saving and investing, cooking from scratch, learning a second language and touch typing. The tone is warm and nostalgic, with many people sharing the moment they finally started and how small daily practice added up.",
+    "detailedSummary": "The most upvoted answers revolve around money. People describe starting retirement savings late and wishing someone had explained compound interest at eighteen; several share the simple rule that finally worked for them.\n\nA second cluster is about everyday self-sufficiency: cooking, basic home repair and fixing a bike. These replies are practical and full of beginner tips, and a long sub-thread argues about whether online videos are enough.\n\nLanguages and music form the third group. Commenters agree that consistency beats talent, while a minority pushes back that adults learn differently and should not feel guilty about starting late.",
+    "sentiment": "positive",
+    "emotions": [
+      "hope",
+      "relief",
+      "joy"
+    ],
+    "toxicity": 0.04,
+    "aiTake": "The thread reads like a collective letter to younger selves. Almost every answer describes a skill whose value only appears after years of small, boring repetitions, which explains why so few people start early."
+  },
+  "meta": {
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "commentsAnalyzed": 200,
+    "commentsTotal": 5412,
+    "truncated": true,
+    "threadFromCache": false,
+    "generatedAt": "2026-10-08T21:02:10Z",
+    "durationMs": 18740
+  }
+}

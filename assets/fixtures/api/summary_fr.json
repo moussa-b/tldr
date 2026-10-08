@@ -1,0 +1,37 @@
+{
+  "thread": {
+    "id": "1abc23d",
+    "subreddit": "france",
+    "title": "Votre avis sur la semaine de 4 jours ?",
+    "author": "jean_dupont",
+    "permalink": "https://www.reddit.com/r/france/comments/1abc23d/votre_avis_sur_la_semaine_de_4_jours/",
+    "createdAt": "2026-10-07T09:12:00Z",
+    "score": 1834,
+    "upvoteRatio": 0.93,
+    "numComments": 612,
+    "isNsfw": false,
+    "selftextExcerpt": "Mon entreprise teste la semaine de 4 jours depuis 3 mois..."
+  },
+  "analysis": {
+    "language": "fr",
+    "shortSummary": "La plupart des commentateurs saluent l'essai de la semaine de quatre jours et citent un vrai gain de concentration, mais beaucoup doutent qu'il tienne dans les petites structures ou les métiers du soin. Le ton reste constructif, avec beaucoup de témoignages concrets.",
+    "detailedSummary": "Deux camps se dessinent. Les salariés du tertiaire décrivent des journées plus denses mais un week-end de trois jours qui change leur rapport au travail ; plusieurs disent avoir gagné en concentration et réduit les réunions inutiles.\n\nLes indépendants, les soignants et les commerçants rappellent que leur charge ne se compresse pas : moins de jours signifie soit des heures supplémentaires, soit une clientèle mécontente. Quelques managers racontent un retour discret à cinq jours après six mois.\n\nUn dernier groupe insiste sur la méthode : l'essai marche quand il s'accompagne d'une vraie réorganisation, pas quand on tasse cinq jours de travail en quatre.",
+    "sentiment": "positive",
+    "emotions": [
+      "hope",
+      "excitement"
+    ],
+    "toxicity": 0.08,
+    "aiTake": "Le fil oppose moins des opinions que des métiers : l'enthousiasme vient surtout de ceux dont le travail se mesure en résultats plutôt qu'en présence. La question sous-jacente est celle de l'organisation, pas du nombre de jours."
+  },
+  "meta": {
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "commentsAnalyzed": 200,
+    "commentsTotal": 612,
+    "truncated": true,
+    "threadFromCache": false,
+    "generatedAt": "2026-10-08T20:45:40Z",
+    "durationMs": 14230
+  }
+}

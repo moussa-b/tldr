@@ -1,0 +1,5 @@
+{
+  "valid": false,
+  "provider": "gemini",
+  "reason": "LLM_KEY_INVALID"
+}

@@ -46,3 +46,7 @@ app.*.map.json
 
 # gstack
 .gstack/
+
+# Local build config (see config/example.json)
+/config/*.json
+!/config/example.json

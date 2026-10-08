@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "UNSUPPORTED_MODEL",
+    "message": "Unknown model for provider",
+    "retryable": false,
+    "requestId": "8f1c2a8e-3b5d-4c1e-9d7a-2f6b1e0c4a11"
+  }
+}

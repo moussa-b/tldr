@@ -1,0 +1,8 @@
+{
+  "error": {
+    "code": "RATE_LIMITED",
+    "message": "Too many requests",
+    "retryable": true,
+    "requestId": "8f1c2a8e-3b5d-4c1e-9d7a-2f6b1e0c4a11"
+  }
+}

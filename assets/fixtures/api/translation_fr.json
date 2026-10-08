@@ -1,0 +1,21 @@
+{
+  "analysis": {
+    "language": "fr",
+    "shortSummary": "Les commentateurs citent surtout des compétences qui se construisent lentement : épargner et investir, cuisiner, apprendre une langue et taper au clavier sans regarder. Le ton est chaleureux et nostalgique, beaucoup racontent le moment où ils ont enfin commencé.",
+    "detailedSummary": "Les réponses les plus votées parlent d'argent. Beaucoup regrettent d'avoir commencé à épargner tard et auraient aimé comprendre les intérêts composés à dix-huit ans.\n\nUn deuxième groupe parle d'autonomie au quotidien : cuisine, petites réparations, vélo. Les conseils sont pratiques, et un long sous-fil débat de la valeur des vidéos en ligne.\n\nLes langues et la musique forment le troisième groupe. La régularité l'emporte sur le talent, même si une minorité rappelle qu'il n'y a pas de honte à commencer tard.",
+    "sentiment": "positive",
+    "emotions": [
+      "hope",
+      "relief",
+      "joy"
+    ],
+    "toxicity": 0.04,
+    "aiTake": "Le fil ressemble à une lettre collective à son moi plus jeune. Presque chaque réponse décrit une compétence dont la valeur n'apparaît qu'après des années de petites répétitions."
+  },
+  "meta": {
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "generatedAt": "2026-10-08T21:03:00Z",
+    "durationMs": 6120
+  }
+}
