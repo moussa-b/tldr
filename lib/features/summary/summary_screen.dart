@@ -59,6 +59,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
   DateTime? _duplicateOf;
   String _modelName = '';
   ApiCancelToken? _cancelToken;
+  ProviderId? _provider;
 
   @override
   void initState() {
@@ -117,10 +118,12 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       context.pushReplacement('/setup?url=${Uri.encodeQueryComponent(url)}');
       return;
     }
+    final provider = pending?.provider ?? await service.settings.activeProvider();
     if (!mounted) return;
     setState(() {
       _loading = true;
       _error = null;
+      _provider = provider;
     });
     _cancelToken = ApiCancelToken();
     try {
@@ -352,7 +355,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     );
   }
 
-  String _providerLabel() => _entry?.provider.label ?? 'le fournisseur';
+  String _providerLabel() => (_entry?.provider ?? _provider)?.label ?? 'le fournisseur';
 }
 
 class _SummaryContent extends StatelessWidget {

@@ -11,13 +11,18 @@ class AppDatabase {
 
   static const version = 1;
 
-  static Future<AppDatabase> open({DatabaseFactory? factory, String? path}) async {
+  static Future<AppDatabase> open({
+    DatabaseFactory? factory,
+    String? path,
+    bool singleInstance = true,
+  }) async {
     final dbFactory = factory ?? databaseFactory;
     final dbPath = path ?? p.join(await dbFactory.getDatabasesPath(), 'tldr.db');
     final db = await dbFactory.openDatabase(
       dbPath,
       options: OpenDatabaseOptions(
         version: version,
+        singleInstance: singleInstance,
         onCreate: (db, _) => _createV1(db),
       ),
     );
