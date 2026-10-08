@@ -87,6 +87,7 @@ class LiveRedditClient implements RedditClient {
           ),
           cancelToken: cancelToken,
         );
+        if (response.statusCode == 403) throw blockedError;
         final location = response.headers.value('location');
         if (location == null) {
           throw const ApiError(
@@ -129,6 +130,9 @@ class LiveRedditClient implements RedditClient {
       if (status == 403) {
         final body = e.response?.data;
         final reason = body is Map ? body['reason'] as String? : null;
+        // A JSON 403 names why the thread is closed; an HTML 403 is Reddit
+        // blocking the client itself (anonymous access refused).
+        if (reason == null) throw blockedError;
         throw ApiError(
           code: 'THREAD_UNAVAILABLE',
           message: 'Forbidden',
@@ -171,6 +175,15 @@ class LiveRedditClient implements RedditClient {
       throw _networkError(e);
     }
   }
+
+  /// Reddit refused this client (seen on anonymous .json requests): only an
+  /// OAuth client id fixes it, so retrying is pointless.
+  static const blockedError = ApiError(
+    code: 'REDDIT_UNAVAILABLE',
+    message: 'Reddit blocked the request',
+    retryable: false,
+    reason: 'blocked',
+  );
 
   ApiError _networkError(DioException e) {
     if (e.type == DioExceptionType.cancel) return ApiError.cancelled;

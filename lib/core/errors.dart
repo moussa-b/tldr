@@ -115,6 +115,11 @@ ErrorCopy errorCopy(ApiError error, {String providerLabel = 'le fournisseur'}) {
       return const ErrorCopy('Réponse de l\'IA inutilisable',
           'L\'IA a renvoyé un résultat incomplet. Réessaie.');
     case 'REDDIT_UNAVAILABLE':
+      if (error.reason == 'blocked') {
+        return const ErrorCopy('Reddit refuse l\'accès',
+            'Reddit bloque les lectures anonymes. Cette version de l\'app doit être '
+            'compilée avec un identifiant d\'app Reddit (REDDIT_CLIENT_ID).');
+      }
       return const ErrorCopy('Reddit ne répond pas',
           'Reddit est indisponible pour le moment. Réessaie.');
     case 'APP_KEY_INVALID':
