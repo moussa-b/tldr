@@ -22,15 +22,17 @@ UI (lib/features)  ──▶  SummaryService  ──▶  TldrApi  ◀── le s
 
 ## Lancer l'app
 
+Le projet est épinglé sur **Flutter 3.47.5 via FVM** (`.fvmrc`) : préfixe les commandes par `fvm`. Le Flutter global de la machine n'est pas utilisé. Les plugins iOS passent par Swift Package Manager (pas de CocoaPods).
+
 ```bash
 cp config/example.json config/dev.json   # puis remplir REDDIT_CLIENT_ID
-flutter run --dart-define-from-file=config/dev.json
+fvm flutter run --dart-define-from-file=config/dev.json
 ```
 
 Pour développer sans réseau ni clé, avec des réponses simulées :
 
 ```bash
-flutter run --dart-define=API_MODE=mock
+fvm flutter run --dart-define=API_MODE=mock
 ```
 
 En mode mock, n'importe quelle clé fonctionne. Ces entrées déclenchent les erreurs :
@@ -63,8 +65,8 @@ Sans identifiant, l'app affiche « Reddit refuse l'accès » au lieu d'un résum
 ## Tests
 
 ```bash
-flutter analyze
-flutter test
+fvm flutter analyze
+fvm flutter test
 ```
 
 ## État d'avancement (2026-10-09)
@@ -74,8 +76,8 @@ flutter test
 | Moteur sur l'appareil (Reddit, sélection R9, prompts, Gemini / OpenAI / Anthropic en REST, deadline 90 s + retry R1) | ✅ Codé et testé unitairement. **Jamais exécuté contre les vraies API IA** : il faut des clés. |
 | Écrans Accueil, Résumé, Réglages, Setup, démo, erreurs, traduction, régénération, doublons, reprise | ✅ |
 | Historique SQLite, clés sécurisées, catalogue embarqué (`assets/catalog.json`) | ✅ |
-| Partage Android (intent `SEND text/plain`) | ✅ L'APK debug compile. |
-| Partage iOS (cible Share Extension, App Group `group.com.bdzapps.tldr`) | ⚠️ Configuré mais **pas encore compilé** : Flutter 3.32.8 ne fonctionne pas avec Xcode 27 (`debug_unpack_ios` interprète mal la sortie de `lipo`). Correctif : `flutter upgrade`. Sur iPhone réel, il faudra aussi choisir ton équipe de signature et activer l'App Group dans Xcode, sur les deux cibles. |
+| Partage Android (intent `SEND text/plain`) | ✅ L'APK debug compile (AGP 9.2.1, Gradle 9.4.1, compileSdk 37). |
+| Partage iOS (Share Extension liée au paquet SPM `receive-sharing-intent`, App Group `group.com.bdzapps.tldr`, cycle de vie UIScene) | ✅ L'app compile pour le simulateur, extension embarquée. Sur iPhone réel : choisir ton équipe de signature et activer l'App Group dans Xcode sur les deux cibles. `receive_sharing_intent` est épinglé en 1.9.0 parce que l'extension le référence par son chemin versionné : en cas de montée de version, mettre à jour ce chemin dans le projet Xcode. |
 | Polices Plex Sans + Literata | ⚠️ Téléchargées par `google_fonts` au premier lancement. `tool/fetch_fonts.sh` permet de les embarquer. |
 | Identifiants de modèles (`assets/catalog.json`) | ⚠️ À vérifier dans la documentation de chaque fournisseur. |
 | Tests | 69 tests : unitaires, moteur, widgets, accessibilité, texte à 200 % |

@@ -50,3 +50,8 @@ app.*.map.json
 # Local build config (see config/example.json)
 /config/*.json
 !/config/example.json
+
+# FVM Version Cache
+.fvm/
+# Gradle reports written under android/ by AGP 9
+/android/build/

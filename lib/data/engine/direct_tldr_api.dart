@@ -17,12 +17,11 @@ import 'reddit_client.dart';
 class DirectTldrApi implements TldrApi {
   DirectTldrApi({
     required this.reddit,
-    required Future<ProviderCatalog> Function() catalog,
+    required this._catalog,
     Dio? dio,
     LlmClient Function(ProviderId provider)? llmFor,
     DateTime Function()? clock,
-  })  : _catalog = catalog,
-        _clock = clock ?? DateTime.now,
+  })  : _clock = clock ?? DateTime.now,
         _llmFor = llmFor ?? ((p) => llmClientFor(p, dio ?? Dio()));
 
   final RedditClient reddit;

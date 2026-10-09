@@ -193,14 +193,12 @@ class AppTheme {
       scaffoldBackgroundColor: scheme.surface,
       extensions: [colors],
     );
-    final textTheme = AppFonts.useGoogleFonts
-        ? GoogleFonts.ibmPlexSansTextTheme(base.textTheme)
-        : base.textTheme;
+    final uiFamily = AppFonts.ui(const TextStyle()).fontFamily;
     final shape8 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Tokens.rMd));
     final shape6 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Tokens.rSm));
     return base.copyWith(
-      textTheme: textTheme.apply(
-          bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
+      textTheme: base.textTheme.apply(
+          fontFamily: uiFamily, bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,

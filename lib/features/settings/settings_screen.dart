@@ -119,7 +119,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     key: ValueKey(_provider),
-                    value: _model,
+                    initialValue: _model,
                     items: [
                       for (final m in catalog.provider(_provider).models)
                         DropdownMenuItem(value: m.id, child: Text(m.name)),

@@ -113,15 +113,19 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
         const SizedBox(height: Tokens.xl),
         Text('Choisis ton fournisseur', style: context.text.sectionLabel),
         const SizedBox(height: Tokens.xs),
-        for (final p in ProviderId.values)
-          RadioListTile<ProviderId>(
-            value: p,
-            groupValue: _provider,
-            onChanged: (value) => setState(() => _provider = value ?? _provider),
-            contentPadding: EdgeInsets.zero,
-            title: Text(p.label, style: context.text.body),
-            subtitle: Text(_subtitles[p]!, style: context.text.meta),
-          ),
+        RadioGroup<ProviderId>(
+          groupValue: _provider,
+          onChanged: (value) => setState(() => _provider = value ?? _provider),
+          child: Column(children: [
+            for (final p in ProviderId.values)
+              RadioListTile<ProviderId>(
+                value: p,
+                contentPadding: EdgeInsets.zero,
+                title: Text(p.label, style: context.text.body),
+                subtitle: Text(_subtitles[p]!, style: context.text.meta),
+              ),
+          ]),
+        ),
         const SizedBox(height: Tokens.lg),
         Align(
           alignment: Alignment.centerRight,
