@@ -21,6 +21,12 @@ Key routing rules:
 - Resume context → invoke /context-restore
 - Author a backlog-ready spec/issue → invoke /spec
 
+## Testing
+
+Flutter is pinned with FVM (`.fvmrc`), so prefix commands with `fvm`. Tests live in `test/`.
+
+- Run: `fvm flutter analyze && fvm flutter test`
+
 ## Design System
 Read DESIGN.md before visual or UI work: it defines the fonts, colors, spacing, and
 aesthetic direction. Ask the user before departing from it. When reviewing or QA-ing
