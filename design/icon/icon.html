@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@600;700&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 1024px; height: 1024px; overflow: hidden; }
+  .icon {
+    width: 1024px; height: 1024px; display: flex; align-items: center; justify-content: center;
+    font-family: 'IBM Plex Sans', sans-serif; font-weight: 700; color: #EEF1EC; background: #2F5D57;
+  }
+  .plus { color: #FF4500; }
+  /* A: one line */
+  .a { font-size: 215px; letter-spacing: -10px; }
+  /* B: stacked */
+  .b { flex-direction: column; font-size: 280px; line-height: 1.0; letter-spacing: -10px; }
+  .b > div { width: 520px; }
+  /* C: light surface */
+  .c { background: #EEF1EC; color: #2F5D57; font-size: 215px; letter-spacing: -10px; }
+  /* D: dark */
+  .d { background: #121816; color: #9CCFC6; font-size: 215px; letter-spacing: -10px; }
+  .d .plus { color: #FF6A33; }
+  .semi { opacity: 0.55; }
+  /* Platform exports, all based on B */
+  .fg, .mono, .dark, .tint { background: transparent; }
+  .fg, .mono { font-size: 230px; }
+  .fg > div, .mono > div { width: 430px; }
+  .mono, .mono .plus { color: #FFFFFF; }
+  .mono .semi { opacity: 1; }
+  .dark { color: #9CCFC6; }
+  .dark .plus { color: #FF6A33; }
+  .tint, .tint .plus { color: #FFFFFF; }
+  .tint .semi { opacity: 0.6; }
+</style>
+</head>
+<body>
+<div id="icon" class="icon"></div>
+<script>
+  const v = location.hash.slice(1) || 'a';
+  const el = document.getElementById('icon');
+  const stacked = ['b', 'fg', 'mono', 'dark', 'tint'].includes(v);
+  el.classList.add(v);
+  if (v !== 'b' && stacked) el.classList.add('b');
+  el.innerHTML = stacked
+    ? '<div>TL<span class="semi">;</span></div><div>DR<span class="plus">+</span></div>'
+    : 'TL<span class="semi">;</span>DR<span class="plus">+</span>';
+</script>
+</body>
+</html>

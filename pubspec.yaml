@@ -61,6 +61,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   mocktail: ^1.0.5
   sqflite_common_ffi: ^2.3.6
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -111,3 +112,17 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# App icon: TL;DR+ stacked mark (design/icon/icon.html renders the sources).
+# Regenerate with: fvm dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  remove_alpha_ios: true
+  image_path_ios_dark_transparent: "assets/icon/icon-ios-dark.png"
+  image_path_ios_tinted_grayscale: "assets/icon/icon-ios-tinted.png"
+  adaptive_icon_background: "#2F5D57"
+  adaptive_icon_foreground: "assets/icon/foreground.png"
+  adaptive_icon_foreground_inset: 0
+  adaptive_icon_monochrome: "assets/icon/monochrome.png"
