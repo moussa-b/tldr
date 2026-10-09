@@ -138,6 +138,13 @@ class MockTldrApi implements TldrApi {
     final meta = json['meta'] as Map<String, dynamic>;
     meta['provider'] = provider.name;
     if (model != null) meta['model'] = model;
+    // The summary text is a fixture, but « Ouvrir dans Reddit » and the
+    // history must point to the thread the user actually shared.
+    final thread = json['thread'] as Map<String, dynamic>;
+    final shared = extractRedditUrl(url)!;
+    thread['permalink'] = shared;
+    thread['id'] = extractPostId(shared) ?? thread['id'];
+    thread['subreddit'] = extractSubreddit(shared) ?? thread['subreddit'];
     final result = SummaryResult.fromJson(json);
     _idempotent[idempotencyKey] = result;
     return result;

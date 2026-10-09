@@ -35,7 +35,22 @@ Pour développer sans réseau ni clé, avec des réponses simulées :
 fvm flutter run --dart-define=API_MODE=mock
 ```
 
-En mode mock, n'importe quelle clé fonctionne. Ces entrées déclenchent les erreurs :
+### Sur ton téléphone Android branché en USB (Huawei ANE-LX1)
+
+```bash
+fvm flutter run -d 9WV7N19422001815 --dart-define=API_MODE=mock
+```
+
+- `9WV7N19422001815` est l'identifiant du téléphone ; `fvm flutter devices` liste les appareils branchés.
+- Sur Huawei, valide la fenêtre « Installer via USB » sur l'écran du téléphone, sinon l'installation reste bloquée.
+- Dans le terminal : `r` recharge après une modification, `R` redémarre, `q` quitte. Les lignes `ZeroHung` sont du bruit système Huawei.
+- Pour le mode réel (une fois `config/dev.json` rempli) : `fvm flutter run -d 9WV7N19422001815 --dart-define-from-file=config/dev.json`.
+
+### Mode mock
+
+Le mock ne lit pas Reddit : le **texte du résumé est toujours l'un de 3 exemples** (AskReddit, r/france, r/technology), choisi selon l'URL. Le lien « Ouvrir dans Reddit » et l'historique pointent en revanche vers le thread réellement partagé.
+
+N'importe quelle clé fonctionne. Ces entrées déclenchent les erreurs :
 
 | Entrée | Erreur |
 |---|---|
