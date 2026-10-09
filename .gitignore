@@ -51,6 +51,11 @@ app.*.map.json
 /config/*.json
 !/config/example.json
 
+# Android release signing: never commit the upload keystore or its passwords
+*.jks
+*.keystore
+/android/key.properties
+
 # FVM Version Cache
 .fvm/
 # Gradle reports written under android/ by AGP 9
