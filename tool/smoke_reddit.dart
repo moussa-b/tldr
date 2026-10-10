@@ -1,7 +1,10 @@
 // ignore_for_file: avoid_print
-// Live check of the Reddit side of DirectTldrApi (no AI key needed):
-//   dart run tool/smoke_reddit.dart [reddit-url]
-// Without an argument, takes the top post of r/AskReddit today.
+// Live check of Reddit's OAuth access (no AI key needed). Reddit refuses
+// anonymous clients, so an approved installed-app client id is required:
+//   REDDIT_CLIENT_ID=<id> dart run tool/smoke_reddit.dart [reddit-url]
+// Without a URL, takes the top post of r/AskReddit today.
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:tldr/data/engine/comment_selector.dart';
 import 'package:tldr/data/engine/prompts.dart';
@@ -21,7 +24,8 @@ Future<void> main(List<String> args) async {
     final post = (top.data!['data']['children'] as List).first['data'] as Map;
     url = 'https://www.reddit.com${post['permalink']}';
   }
-  final client = LiveRedditClient(dio: dio, userAgent: _ua);
+  final client = LiveRedditClient(
+      dio: dio, userAgent: _ua, clientId: Platform.environment['REDDIT_CLIENT_ID'] ?? '');
   final watch = Stopwatch()..start();
   final thread = await client.fetch(url);
   final selection = selectComments(thread.comments);

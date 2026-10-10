@@ -109,7 +109,7 @@ class Analysis {
       shortSummary: json['shortSummary'] as String,
       detailedSummary: json['detailedSummary'] as String,
       sentiment: Sentiment.fromJson(json['sentiment'] as String),
-      // Contract: never empty; fall back to neutral if a server misbehaves.
+      // Never empty: fall back to neutral if the model returns no emotion.
       emotions: emotions.isEmpty ? const ['neutral'] : emotions,
       toxicity: (json['toxicity'] as num?)?.toDouble(),
       aiTake: json['aiTake'] as String,
