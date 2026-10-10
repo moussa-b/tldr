@@ -117,8 +117,8 @@ ErrorCopy errorCopy(ApiError error, {String providerLabel = 'le fournisseur'}) {
     case 'REDDIT_UNAVAILABLE':
       if (error.reason == 'blocked') {
         return const ErrorCopy('Reddit refuse l\'accès',
-            'Reddit bloque les lectures anonymes. Cette version de l\'app doit être '
-            'compilée avec un identifiant d\'app Reddit (REDDIT_CLIENT_ID).');
+            'Reddit bloque temporairement la lecture de ce thread. Réessaie dans '
+            'quelques minutes.');
       }
       return const ErrorCopy('Reddit ne répond pas',
           'Reddit est indisponible pour le moment. Réessaie.');
