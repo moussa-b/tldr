@@ -48,4 +48,10 @@ void main() {
     expect(extractSubreddit('https://www.reddit.com/r/france/s/AbC'), 'france');
     expect(extractSubreddit('https://redd.it/1abc23d'), isNull);
   });
+
+  test('short share links are recognised', () {
+    expect(isShortLink('https://www.reddit.com/r/france/s/AbC123'), isTrue);
+    expect(isShortLink('https://www.reddit.com/r/france/comments/1abc23d/x/'), isFalse);
+    expect(isShortLink('https://www.reddit.com/r/france/'), isFalse);
+  });
 }

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:sqflite/sqflite.dart';
 
@@ -49,23 +48,6 @@ class SettingsRepository {
   static const _catalog = 'catalogJson';
   static const _pending = 'pendingSummary';
   static String _modelKey(ProviderId p) => 'model.${p.name}';
-
-  static const _deviceId = 'redditDeviceId';
-  String _deviceIdCache = '';
-
-  /// Random per-install id required by Reddit's installed-app OAuth.
-  /// Loaded by [init] at startup.
-  String get deviceIdSync => _deviceIdCache;
-
-  Future<void> init() async {
-    var id = await _get(_deviceId);
-    if (id == null) {
-      final random = Random.secure();
-      id = List.generate(24, (_) => random.nextInt(36).toRadixString(36)).join();
-      await _set(_deviceId, id);
-    }
-    _deviceIdCache = id;
-  }
 
   Future<String?> _get(String key) async {
     final rows = await _db.query('settings', where: 'key = ?', whereArgs: [key]);

@@ -6,14 +6,12 @@ import '../data/api/tldr_api.dart';
 import '../data/db/app_database.dart';
 import '../data/db/summaries_dao.dart';
 import '../data/engine/direct_tldr_api.dart';
-import '../data/engine/reddit_client.dart';
 import '../data/engine/reddit_page.dart';
 import '../data/engine/webview_reddit_client.dart';
 import '../data/secure/key_store.dart';
 import '../data/settings/settings_repository.dart';
 import '../data/models/models.dart';
 import '../data/summary_service.dart';
-import 'config.dart';
 
 /// Overridden in main() (and tests) with an opened database.
 final databaseProvider = Provider<AppDatabase>(
@@ -23,25 +21,16 @@ final keyStoreProvider = Provider<KeyStore>((ref) => SecureKeyStore());
 
 /// Reads Reddit and calls the user's AI provider, all on the device.
 final apiProvider = Provider<TldrApi>((ref) {
-  final settings = ref.watch(settingsProvider);
   return DirectTldrApi(
-    // No approved Reddit app yet: read the public .json through a WebView.
-    reddit: AppConfig.redditClientId.isEmpty
-        ? WebViewRedditClient(host: ref.watch(redditPageHostProvider))
-        : LiveRedditClient(
-            clientId: AppConfig.redditClientId,
-            userAgent: AppConfig.redditUserAgent,
-            deviceId: () => settings.deviceIdSync,
-          ),
+    reddit: WebViewRedditClient(host: ref.watch(redditPageHostProvider)),
     catalog: () async => ProviderCatalog.fromJson(
         jsonDecode(await bundledCatalog()) as Map<String, dynamic>),
   );
 });
 
-/// Set when threads are read through a WebView (no Reddit client id): the
-/// Summary screen then shows the Reddit page while it loads.
-final redditPageHostProvider = Provider<RedditPageHost?>((ref) =>
-    AppConfig.redditClientId.isNotEmpty ? null : RedditPageHost());
+/// Lets the Summary screen show the Reddit page the thread is read from.
+/// Widget tests override it with null: no WebView, a skeleton instead.
+final redditPageHostProvider = Provider<RedditPageHost?>((ref) => RedditPageHost());
 
 final summariesDaoProvider =
     Provider<SummariesDao>((ref) => SummariesDao(ref.watch(databaseProvider).db));

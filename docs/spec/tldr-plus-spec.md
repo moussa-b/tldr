@@ -1,6 +1,6 @@
 # [Epic] TL;DR+ — résumé IA de threads Reddit (app mobile Flutter, tout sur l'appareil)
 
-> Statut : VALIDÉ (/spec, quality gate 8/10, 2026-10-08). Révisé le 2026-10-09 (backend supprimé) et le 2026-10-10 (lecture de Reddit par WebView, suppression du mode mock). Les annexes en fin de document sont l'historique des revues du 2026-10-08 et décrivent encore le backend abandonné.
+> Statut : VALIDÉ (/spec, quality gate 8/10, 2026-10-08). Révisé le 2026-10-09 (backend supprimé) et le 2026-10-10 (lecture de Reddit par WebView, suppression du mode mock et de l'OAuth Reddit). Les annexes en fin de document sont l'historique des revues du 2026-10-08 et décrivent encore le backend abandonné.
 
 ## Context
 
@@ -30,7 +30,7 @@ Référence fonctionnelle — RedditAI `src/reddit_ai.py` / `src/schema.py` :
 │                            │                                       │
 │   UI (lib/features) ──▶ SummaryService ──▶ TldrApi                 │
 │                            │                 └▶ DirectTldrApi      │──▶ www.reddit.com (WebView)
-│   Keychain/Keystore ◀──────┤ clé IA              (lib/data/engine) │    ou oauth.reddit.com
+│   Keychain/Keystore ◀──────┤ clé IA              (lib/data/engine) │
 │   SQLite (sqflite)  ◀──────┘ historique, réglages                  │──▶ Gemini / Anthropic / OpenAI
 └────────────────────────────────────────────────────────────────────┘      (clé de l'utilisateur)
 ```
@@ -107,13 +107,11 @@ Un résumé (`SummaryResult`) = `{ thread, analysis, meta: { provider, model, co
 1. Extraire la première sous-chaîne `https?://\S+` ; aucune → `INVALID_URL`.
 2. Hôtes acceptés : `reddit.com`, `www.reddit.com`, `old.reddit.com`, `new.reddit.com`, `np.reddit.com`, `m.reddit.com`, `amp.reddit.com`, `redd.it`. Autre → `INVALID_URL`.
 3. Extraire l'ID : `/r/<sub>/comments/<id>(/...)?`, `/comments/<id>`, `redd.it/<id>`. Un lien vers un commentaire précis résume **tout le thread**. Query string et fragment ignorés. `id` : `^[a-z0-9]{5,10}$`.
-4. Lien court `/r/<sub>/s/<code>` : la WebView suit la redirection (mode WebView) ; en OAuth, `GET` sans suivre les redirections et lecture de `Location` (max 3 sauts). Non résolu → `THREAD_NOT_FOUND`. Aucun ID au final → `UNSUPPORTED_URL`.
+4. Lien court `/r/<sub>/s/<code>` : la WebView suit la redirection. Autre URL Reddit sans ID → `UNSUPPORTED_URL`, avant toute requête.
 
 ### Lecture de Reddit
 
-Reddit renvoie **403** (page HTML) aux requêtes `.json` anonymes d'un client HTTP. Deux modes, choisis à la compilation :
-
-**Mode WebView (par défaut, `REDDIT_CLIENT_ID` vide)** — `RedditPage` (`reddit_page.dart`) + `WebViewRedditClient` :
+Reddit renvoie **403** (page HTML) aux requêtes `.json` anonymes d'un client HTTP. L'app **ne s'appuie pas sur l'API OAuth de Reddit**, appelée à disparaître (décision du 2026-10-10). Lecture par `RedditPage` (`reddit_page.dart`) + `WebViewRedditClient` :
 1. Une WebView ouvre `https://www.reddit.com/comments/<id>/` (ou le lien court). L'écran Résumé l'affiche pendant la lecture (D-6) ; sans écran (Régénérer), elle tourne hors écran.
 2. Reddit sert un contrôle JavaScript ; la WebView l'exécute comme un navigateur et reçoit des cookies de session anonymes.
 3. Depuis la page, l'app exécute `fetch('/comments/<id>.json?sort=top&limit=500&depth=4&raw_json=1')`, au chargement de chaque page et toutes les 2 s (la page complète peut mettre longtemps à finir). Un 403 HTML = contrôle pas encore passé : on attend la tentative suivante. Timeout 25 s.
@@ -122,9 +120,7 @@ Reddit renvoie **403** (page HTML) aux requêtes `.json` anonymes d'un client HT
 
 ⚠️ Cet accès n'est pas approuvé par la [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy) de Reddit (demande d'accès API déposée le 2026-10-09, en attente). Risque accepté par l'utilisateur.
 
-**Mode OAuth (`REDDIT_CLIENT_ID` renseigné, app Reddit de type *installed* approuvée)** — `LiveRedditClient` (`reddit_client.dart`) : jeton app-only `grant_type=https://oauth.reddit.com/grants/installed_client` avec un `device_id` aléatoire persistant (`settings.redditDeviceId`), puis `GET https://oauth.reddit.com/comments/<id>?sort=top&limit=500&depth=4&raw_json=1`, `User-Agent: android:com.bdzapps.tldr:v1.0.0 (by /u/<user>)`.
-
-Mapping d'erreurs (les deux modes) : 404 → `THREAD_NOT_FOUND` ; 403 avec corps JSON `reason` `quarantined`/`banned` → `THREAD_UNAVAILABLE` correspondant, autre `reason` → `private` ; 403 HTML (client refusé) → `REDDIT_UNAVAILABLE` `blocked` ; post avec `removed_by_category = deleted` ou selftext `[deleted]` → `deleted`, autre `removed_by_category` ou selftext `[removed]` → `removed` (uniquement si 0 commentaire exploitable, sinon on résume les commentaires) ; 5xx/429/réseau → `REDDIT_UNAVAILABLE`.
+Mapping d'erreurs (`decodeListingBody`, `parseThreadListing`) : 404 → `THREAD_NOT_FOUND` ; 403 avec corps JSON `reason` `quarantined`/`banned` → `THREAD_UNAVAILABLE` correspondant, autre `reason` → `private` ; 403 HTML (client refusé) → `REDDIT_UNAVAILABLE` `blocked` ; post avec `removed_by_category = deleted` ou selftext `[deleted]` → `deleted`, autre `removed_by_category` ou selftext `[removed]` → `removed` (uniquement si 0 commentaire exploitable, sinon on résume les commentaires) ; 5xx/429/réseau → `REDDIT_UNAVAILABLE`.
 
 ### Sélection des commentaires (budget)
 
@@ -219,18 +215,18 @@ Material 3, palette et tokens définis dans **`DESIGN.md`** (« Céladon », D-1
 
 ### Configuration de build
 
-`--dart-define-from-file=config/<fichier>.json` : `REDDIT_CLIENT_ID` (vide = mode WebView), `REDDIT_USER_AGENT`. `config/example.json` est commité ; les autres `config/*.json` sont ignorés par git.
+Aucune : pas de `--dart-define` ni de fichier de configuration.
 
 ### Arborescence
 
 ```
 lib/
   main.dart
-  app/            app.dart, router.dart, theme.dart, config.dart, providers.dart
+  app/            app.dart, router.dart, theme.dart, providers.dart
   core/           reddit_url.dart, errors.dart (ApiError + messages FR), labels.dart, widgets/common.dart
   data/
     api/          tldr_api.dart (interface)
-    engine/       direct_tldr_api.dart, reddit_client.dart (OAuth + parsing), reddit_page.dart (WebView),
+    engine/       direct_tldr_api.dart, reddit_client.dart (parsing du listing), reddit_page.dart (WebView),
                   webview_reddit_client.dart, comment_selector.dart, prompts.dart, llm_client.dart
     models/       models.dart (classes immuables écrites à la main, fromJson/toJson)
     db/           app_database.dart (sqflite), summaries_dao.dart
@@ -266,7 +262,7 @@ Requête de la liste d'historique : uniquement les colonnes d'affichage (`id`, `
    - État vide : voir D-12.
 2. **Résumé** (`/summary/:id` historique, `/summary/new?url=` génération, `/summary/demo` exemple)
    - Reprise : voir « Reprise d'un résumé interrompu » et D-20.
-   - Chargement : voir D-6 (page Reddit puis poussière en mode WebView ; squelette en mode OAuth). « Annuler » annule la requête, aucune ligne en base, retour à l'écran précédent.
+   - Chargement : voir D-6 (page Reddit puis poussière). « Annuler » annule la requête, aucune ligne en base, retour à l'écran précédent.
    - Contenu : voir D-1 ; libellés FR des émotions : joie, tristesse, colère, peur, dégoût, surprise, amour, fierté, soulagement, espoir, enthousiasme, envie, culpabilité, honte, neutre ; emoji (historique uniquement) : joy 😄, sadness 🙁, anger 😠, fear 😨, disgust 🤢, surprise 😯, love 🥰, pride 😎, relief 😌, hope 🤞, excitement 😀, envy 😑, guilt 😥, shame 😶, neutral 😐.
    - Actions : Ouvrir dans Reddit (`permalink`), Partager (titre + shortSummary + permalink + « via TL;DR+ »), Régénérer (D-8).
    - Traduction : D-9. Erreurs : D-7.
@@ -312,7 +308,7 @@ CREATE TABLE summaries (
 CREATE INDEX summaries_created_at_idx ON summaries (created_at DESC);
 
 CREATE TABLE settings (
-  key   TEXT PRIMARY KEY,   -- "activeProvider", "model.<provider>", "catalogJson", "pendingSummary", "redditDeviceId"
+  key   TEXT PRIMARY KEY,   -- "activeProvider", "model.<provider>", "catalogJson", "pendingSummary"
   value TEXT NOT NULL
 );
 ```
@@ -416,13 +412,13 @@ Partage ──▶ [ / ] ──push──▶ [ /summary/new ] ──(pas de clé)
 
 #### D-6 État de chargement (approuvé D8, révisé le 2026-10-10)
 
-**Mode WebView (par défaut)** — demandé par l'utilisateur, consigné dans `DESIGN.md` (Motion) :
+Demandé par l'utilisateur, consigné dans `DESIGN.md` (Motion) :
 - La page Reddit du thread s'affiche pendant sa lecture, avec une barre de progression de 2 dp en haut. Rien n'est affiché avant (pas de squelette).
 - Dès que le `.json` est lu, la page se dissout en poussière scintillante (grains couleur `text` sur un voile `surface`, 900 ms `easeOut`), qui reste pendant que l'IA écrit. En bas, sur une bande `surface` unie : « Analyse par l'IA… » et « Annuler ».
 - Quand le résumé est prêt, la poussière s'écarte depuis le centre et révèle D-1 (1 100 ms `easeIn`). Une erreur s'affiche directement, sans poussière.
 - Réduction des animations : poussière immobile, révélation instantanée.
 
-**Mode OAuth (`REDDIT_CLIENT_ID`)** — squelette d'origine :
+Sans page Reddit à afficher (tests de widgets seulement), l'écran garde le squelette d'origine :
 - En haut : `r/<sub>` extrait de l'URL quand il y figure, sinon « Thread Reddit ».
 - Ligne d'étape (`bodyMedium`, `onSurfaceVariant`) avec transition fondue : « Récupération du thread… » (0-3 s) puis « Analyse par l'IA… » (> 3 s).
 - Dessous, un squelette qui reprend la forme de D-1 : 2 lignes de titre, bloc « En bref » de 5 lignes, ligne verdict, 2 blocs de section. Blocs `surfaceContainerHighest`, coins 4 dp, animation de pulsation lente (1,2 s), désactivée si « réduire les animations » est actif.
@@ -558,7 +554,7 @@ Une seule ligne `bodyMedium` (Plex Sans) sous « En bref », qui passe à la lig
 #### D-16 Mouvement (approuvé D18)
 
 Mouvements autorisés, et rien d'autre (pas de rebond, pas d'effet décoratif) :
-1. Chargement → résumé : page Reddit → poussière → révélation en mode WebView (D-6, `DESIGN.md`) ; fondu 250 ms `Curves.easeOut` depuis le squelette en mode OAuth.
+1. Chargement → résumé : page Reddit → poussière → révélation (D-6, `DESIGN.md`).
 2. « Lire plus » / « Lire moins » sur Points de vue : `AnimatedSize` 200 ms `easeOut`.
 3. Transitions de page : défaut Material 3 de la plateforme.
 
@@ -627,18 +623,18 @@ App
 | Unit | `reddit_url.dart` (formats, texte autour, non Reddit) ; messages FR par code ; `summaries_dao` (upsert, suppression/restauration, ordre) ; sélection des commentaires (R9) ; parsing du listing Reddit et mapping d'erreurs ; mapping d'erreurs des 3 fournisseurs ; `decodeListingBody` du mode WebView |
 | Service | `SummaryService` avec `FakeTldrApi` : clés (valide, refusée, non vérifiée), catalogue, doublons, traduction, reprise |
 | Widget | Accueil, Résumé (chargement, succès, erreur, traduction), Réglages, `/setup`, accessibilité (texte à 200 %, cibles, contraste), `DustVeil` (couverture, révélation, réduction des animations) |
-| Manuel | Lecture Reddit réelle (WebView et, une fois approuvé, OAuth), vrais fournisseurs IA, partage depuis l'app Reddit sur appareil |
+| Manuel | Lecture Reddit réelle par la WebView, vrais fournisseurs IA, partage depuis l'app Reddit sur appareil |
 | Eval (R7, reporté) | `tool/eval.dart` sur des threads figés × 3 fournisseurs quand des clés de test sont disponibles |
 
 ## Rollback Plan
 
-App pas encore publiée : rollback = revert git sur `develop`. Une fois publiée : republier la version précédente. Si Reddit bloque le mode WebView, basculer sur le mode OAuth (`REDDIT_CLIENT_ID`) dès que l'accès API est approuvé.
+App pas encore publiée : rollback = revert git sur `develop`. Une fois publiée : republier la version précédente. Si Reddit bloque la lecture par WebView, la solution de repli serait de lire le contenu affiché par la page (DOM) plutôt que le `.json`.
 
 ## Risques
 
 | Risque | Impact | Mitigation |
 |---|---|---|
-| Lecture de Reddit par WebView non approuvée par la Responsible Builder Policy | Blocage ou changement du contrôle JavaScript → plus aucun résumé ; risque de refus de l'accès API | Demande d'accès API déposée le 2026-10-09 ; mode OAuth prêt (`REDDIT_CLIENT_ID`) ; erreur claire `REDDIT_UNAVAILABLE` `blocked` |
+| Lecture de Reddit par WebView non approuvée par la Responsible Builder Policy | Blocage ou changement du contrôle JavaScript → plus aucun résumé ; risque de refus de l'accès API | Erreur claire `REDDIT_UNAVAILABLE` `blocked` ; repli possible sur le contenu affiché par la page |
 | DOM de Reddit qui change (feuille cookies, page de contrôle) | Feuille cookies visible, lecture plus lente | Masquage CSS par identifiant, lecture du `.json` indépendante du rendu de la page |
 | IDs de modèles qui changent | `LLM_MODEL_UNAVAILABLE` | Catalogue embarqué mis à jour à chaque version, réconciliation R4 |
 | Lien court `/s/` qui change de format | Partage cassé | Redirection suivie par la WebView, erreur claire `THREAD_NOT_FOUND` |

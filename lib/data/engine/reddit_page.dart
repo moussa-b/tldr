@@ -76,7 +76,7 @@ class RedditPage {
     _timeout = Timer(timeout, () {
       _finish(
           error: _lastStatus == 403
-              ? LiveRedditClient.blockedError
+              ? redditBlockedError
               : const ApiError(
                   code: 'REDDIT_UNAVAILABLE', message: 'Reddit unavailable', retryable: true));
     });

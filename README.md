@@ -23,27 +23,22 @@ UI (lib/features)  ──▶  SummaryService  ──▶  TldrApi ──▶ Direc
 
 ### Lecture de Reddit
 
-Reddit renvoie **403** aux requêtes `.json` anonymes d'un client HTTP. Deux modes existent :
-
-- **Par défaut, sans identifiant Reddit** : l'écran Résumé affiche le post dans une WebView (`lib/data/engine/reddit_page.dart`). La WebView passe le contrôle JavaScript de Reddit comme un navigateur, puis l'app lit `/comments/<id>.json` depuis cette page. Une fois le thread lu, la page se dissout en poussière pendant que l'IA écrit (`lib/features/summary/dust_veil.dart`). La bannière cookies de Reddit est masquée, rien n'est accepté. ⚠️ Cet accès n'est pas approuvé par la [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy) de Reddit.
-- **Avec `REDDIT_CLIENT_ID`** (app Reddit de type *installed app*, à demander à Reddit via le ticket développeur de la policy) : l'app passe par l'API OAuth officielle, sans WebView.
+Reddit renvoie **403** aux requêtes `.json` anonymes d'un client HTTP, et l'app ne dépend pas de l'API OAuth de Reddit. L'écran Résumé affiche le post dans une WebView (`lib/data/engine/reddit_page.dart`). La WebView passe le contrôle JavaScript de Reddit comme un navigateur, puis l'app lit `/comments/<id>.json` depuis cette page. Une fois le thread lu, la page se dissout en poussière pendant que l'IA écrit (`lib/features/summary/dust_veil.dart`). La bannière cookies de Reddit est masquée, rien n'est accepté. ⚠️ Cet accès n'est pas approuvé par la [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy) de Reddit.
 
 ## Lancer l'app
 
 Le projet est épinglé sur **Flutter 3.47.5 via FVM** (`.fvmrc`) : préfixe les commandes par `fvm`. Le Flutter global de la machine n'est pas utilisé. Les plugins iOS passent par Swift Package Manager (pas de CocoaPods).
 
 ```bash
-fvm flutter run --dart-define-from-file=config/example.json
+fvm flutter run
 ```
 
 Au premier lancement, l'app demande une clé IA (Gemini a une offre gratuite : https://aistudio.google.com/apikey).
 
-Pour utiliser un identifiant Reddit approuvé : copie `config/example.json` en `config/dev.json`, remplis `REDDIT_CLIENT_ID` et ton pseudo dans `REDDIT_USER_AGENT`, puis lance avec `--dart-define-from-file=config/dev.json`.
-
 ### Sur ton téléphone Android branché en USB (Huawei ANE-LX1)
 
 ```bash
-fvm flutter run -d 9WV7N19422001815 --dart-define-from-file=config/example.json
+fvm flutter run -d 9WV7N19422001815
 ```
 
 - `9WV7N19422001815` est l'identifiant du téléphone ; `fvm flutter devices` liste les appareils branchés.

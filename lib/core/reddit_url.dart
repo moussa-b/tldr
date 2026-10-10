@@ -49,6 +49,12 @@ String? extractPostId(String url) {
   return match?.group(1)?.toLowerCase();
 }
 
+/// `/r/<sub>/s/<code>` share links, which redirect to a post.
+bool isShortLink(String url) {
+  final segments = Uri.tryParse(url.trim())?.pathSegments ?? const [];
+  return segments.length >= 4 && segments[0] == 'r' && segments[2] == 's';
+}
+
 /// Subreddit name from the URL path, used by the loading screen (spec D-6).
 String? extractSubreddit(String url) {
   final uri = Uri.tryParse(url.trim());

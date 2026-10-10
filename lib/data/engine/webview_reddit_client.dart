@@ -25,6 +25,10 @@ class WebViewRedditClient implements RedditClient {
           code: 'INVALID_URL', message: 'Not a Reddit URL', retryable: false);
     }
     final id = extractPostId(link);
+    if (id == null && !isShortLink(link)) {
+      throw const ApiError(
+          code: 'UNSUPPORTED_URL', message: 'Not a post URL', retryable: false);
+    }
     // Short `/s/` links are opened as is: the WebView follows the redirect.
     final start = id == null ? link : 'https://www.reddit.com/comments/$id/';
     final shared = host?.visible;
@@ -39,13 +43,13 @@ class WebViewRedditClient implements RedditClient {
 }
 
 /// Maps a `.json` response to the listing, or to the same errors as
-/// [LiveRedditClient] (404 → not found, JSON 403 → closed thread).
+/// the spec (404 → not found, JSON 403 → closed thread, HTML 403 → blocked).
 List<dynamic> decodeListingBody(int status, String text) {
   final Object? data;
   try {
     data = jsonDecode(text);
   } on FormatException {
-    if (status == 403) throw LiveRedditClient.blockedError;
+    if (status == 403) throw redditBlockedError;
     throw const ApiError(
         code: 'REDDIT_UNAVAILABLE', message: 'Unexpected response', retryable: true);
   }

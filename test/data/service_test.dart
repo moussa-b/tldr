@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tldr/core/errors.dart';
 import 'package:tldr/data/api/tldr_api.dart';
@@ -173,39 +172,5 @@ void main() {
       expect(t.selftext, isEmpty);
       expect(t.comments, isNotEmpty);
     });
-  });
-
-  test('an HTML 403 from Reddit is a block, a JSON 403 is a private thread', () async {
-    Dio dioReturning(Object body) {
-      final dio = Dio();
-      dio.interceptors.add(InterceptorsWrapper(onRequest: (options, handler) {
-        handler.reject(DioException(
-          requestOptions: options,
-          type: DioExceptionType.badResponse,
-          response: Response(requestOptions: options, statusCode: 403, data: body),
-        ));
-      }));
-      return dio;
-    }
-
-    await expectLater(
-      LiveRedditClient(dio: dioReturning('<html>blocked</html>')).fetch('https://redd.it/abc123'),
-      throwsA(isA<ApiError>()
-          .having((e) => e.code, 'code', 'REDDIT_UNAVAILABLE')
-          .having((e) => e.reason, 'reason', 'blocked')
-          .having((e) => e.retryable, 'retryable', false)),
-    );
-    await expectLater(
-      LiveRedditClient(dio: dioReturning({'reason': 'private'})).fetch('https://redd.it/abc123'),
-      throwsA(isA<ApiError>().having((e) => e.reason, 'reason', 'private')),
-    );
-  });
-
-  test('LiveRedditClient rejects non-Reddit links before any request', () async {
-    final client = LiveRedditClient(dio: Dio(BaseOptions(baseUrl: 'http://127.0.0.1:1')));
-    await expectLater(client.fetch('https://example.com/x'),
-        throwsA(isA<ApiError>().having((e) => e.code, 'code', 'INVALID_URL')));
-    await expectLater(client.fetch('https://www.reddit.com/r/france/'),
-        throwsA(isA<ApiError>().having((e) => e.code, 'code', 'UNSUPPORTED_URL')));
   });
 }

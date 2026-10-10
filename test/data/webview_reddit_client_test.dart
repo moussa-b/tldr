@@ -7,6 +7,13 @@ Matcher apiError(String code, {String? reason}) => isA<ApiError>()
     .having((e) => e.reason, 'reason', reason);
 
 void main() {
+  test('rejects non-Reddit and non-post links before opening a page', () async {
+    final client = WebViewRedditClient();
+    await expectLater(client.fetch('https://example.com/x'), throwsA(apiError('INVALID_URL')));
+    await expectLater(
+        client.fetch('https://www.reddit.com/r/france/'), throwsA(apiError('UNSUPPORTED_URL')));
+  });
+
   group('decodeListingBody', () {
     test('returns the [post, comments] listing', () {
       final listing = decodeListingBody(200, '[{"kind":"Listing"},{"kind":"Listing"}]');
