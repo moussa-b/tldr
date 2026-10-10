@@ -38,7 +38,7 @@ fvm flutter run --dart-define-from-file=config/example.json
 
 Au premier lancement, l'app demande une clé IA (Gemini a une offre gratuite : https://aistudio.google.com/apikey).
 
-Pour utiliser un identifiant Reddit approuvé : copie `config/example.json` en `config/dev.json`, remplis `REDDIT_CLIENT_ID` et ton pseudo dans `REDDIT_USER_AGENT`, puis lance avec `--dart-define-from-file=config/dev.json`. `dart run tool/smoke_reddit.dart <url>` vérifie alors l'accès OAuth (variable d'environnement `REDDIT_CLIENT_ID`).
+Pour utiliser un identifiant Reddit approuvé : copie `config/example.json` en `config/dev.json`, remplis `REDDIT_CLIENT_ID` et ton pseudo dans `REDDIT_USER_AGENT`, puis lance avec `--dart-define-from-file=config/dev.json`.
 
 ### Sur ton téléphone Android branché en USB (Huawei ANE-LX1)
 
