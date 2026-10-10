@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -56,6 +57,10 @@ class RedditPage {
 
   static const _channel = 'TldrListing';
 
+  /// Any script on the page can call the channel: only messages carrying this
+  /// page's nonce are our fetch's answer.
+  final _nonce = List.generate(16, (_) => Random.secure().nextInt(16).toRadixString(16)).join();
+
   Completer<ListingBody>? _done;
   Timer? _timeout;
   Timer? _ticker;
@@ -67,18 +72,24 @@ class RedditPage {
   /// Opens [start] (a post or short link) and reads its listing.
   Future<ListingBody> listing(String start,
       {CancelToken? cancelToken, Duration timeout = const Duration(seconds: 25)}) {
+    _finish(error: ApiError.cancelled);
     _done?.future.ignore();
     final done = _done = Completer<ListingBody>();
     _postId = extractPostId(start);
     _lastStatus = 0;
+    _busy = false;
     listed.value = false;
-    cancelToken?.whenCancel.then((_) => _finish(error: ApiError.cancelled));
+    // A late cancel or timeout from an earlier call must not end this one.
+    void finishThis(ApiError error) {
+      if (identical(_done, done)) _finish(error: error);
+    }
+
+    cancelToken?.whenCancel.then((_) => finishThis(ApiError.cancelled));
     _timeout = Timer(timeout, () {
-      _finish(
-          error: _lastStatus == 403
-              ? redditBlockedError
-              : const ApiError(
-                  code: 'REDDIT_UNAVAILABLE', message: 'Reddit unavailable', retryable: true));
+      finishThis(_lastStatus == 403
+          ? redditBlockedError
+          : const ApiError(
+              code: 'REDDIT_UNAVAILABLE', message: 'Reddit unavailable', retryable: true));
     });
     // Reddit's full thread page can take longer to finish loading than the
     // timeout, so the listing is also tried on a tick.
@@ -135,22 +146,29 @@ class RedditPage {
     _busy = true;
     final path = jsonEncode('/comments/$id.json?sort=top&limit=500&depth=4&raw_json=1');
     final script = 'fetch($path, {credentials: "include"})'
-        '.then(r => r.text().then(t => '
-        '$_channel.postMessage(JSON.stringify({status: r.status, text: t}))))'
-        '.catch(() => $_channel.postMessage(\'{"status":0,"text":""}\'));';
+        '.then(r => r.text().then(t => $_channel.postMessage('
+        'JSON.stringify({nonce: "$_nonce", status: r.status, text: t}))))'
+        '.catch(() => $_channel.postMessage('
+        'JSON.stringify({nonce: "$_nonce", status: 0, text: ""})));';
     unawaited(controller.runJavaScript(script).catchError((_) => _busy = false));
   }
 
   void _onListing(JavaScriptMessage message) {
+    final Object? value;
+    try {
+      value = jsonDecode(message.message);
+    } on FormatException {
+      return;
+    }
+    if (value is! Map || value['nonce'] != _nonce) return;
     _busy = false;
-    final value = jsonDecode(message.message) as Map<String, dynamic>;
-    final status = (value['status'] as num).toInt();
-    final text = value['text'] as String;
+    final status = (value['status'] as num?)?.toInt() ?? 0;
+    final text = value['text'] as String? ?? '';
     if (status == 0) return;
     _lastStatus = status;
-    // An HTML 403 means Reddit's check has not passed yet: the next try runs
-    // once the check has reloaded the page.
-    if (status == 403 && !_looksLikeJson(text)) return;
+    // An HTML answer (403, or a 200 interstitial) means Reddit's check has not
+    // passed yet: the next try runs once the check has reloaded the page.
+    if (!_looksLikeJson(text)) return;
     _finish(result: (status: status, text: text));
   }
 
