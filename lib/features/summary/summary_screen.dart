@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../app/providers.dart';
 import '../../app/theme.dart';
@@ -15,8 +16,10 @@ import '../../core/reddit_url.dart';
 import '../../core/widgets/common.dart';
 import '../../data/api/tldr_api.dart';
 import '../../data/db/summaries_dao.dart';
+import '../../data/engine/reddit_page.dart';
 import '../../data/models/models.dart';
 import '../../data/settings/settings_repository.dart';
+import 'dust_veil.dart';
 import 'summary_widgets.dart';
 
 enum SummaryMode { entry, create, demo }
@@ -60,6 +63,13 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
   String _modelName = '';
   ApiCancelToken? _cancelToken;
   ProviderId? _provider;
+
+  /// Reddit page shown while the thread loads (WebView mode); once its
+  /// listing is read, it dissolves into dust until the summary is ready.
+  RedditPage? _page;
+  bool _pageListed = false;
+  bool _viaPage = false;
+  RedditPageHost? _host;
 
   @override
   void initState() {
@@ -120,6 +130,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     }
     final provider = pending?.provider ?? await service.settings.activeProvider();
     if (!mounted) return;
+    _openPage();
     setState(() {
       _loading = true;
       _error = null;
@@ -135,15 +146,50 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       );
       ref.read(historyProvider.notifier).reload();
       if (!mounted) return;
+      // The summary is in place before the dust lifts off it.
+      await _show(entry);
+      if (!mounted) return;
       setState(() => _loading = false);
-      _show(entry);
     } on ApiError catch (e) {
       if (!mounted || e.code == 'CANCELLED') return;
       setState(() {
         _loading = false;
+        _viaPage = false;
         _error = e;
       });
+    } finally {
+      _closePage();
     }
+  }
+
+  void _openPage() {
+    final host = _host = ref.read(redditPageHostProvider);
+    if (host == null) return;
+    _closePage();
+    final page = _page = RedditPage();
+    host.visible = page;
+    page.listed.addListener(_onListed);
+    _viaPage = true;
+    _pageListed = false;
+  }
+
+  void _onListed() {
+    if (mounted) setState(() => _pageListed = _page?.listed.value ?? false);
+  }
+
+  /// The WebView stays on screen until the summary replaces it; only the
+  /// host link and Reddit's scripts go.
+  void _closePage() {
+    final host = _host;
+    if (host != null && identical(host.visible, _page)) host.visible = null;
+    _page?.listed.removeListener(_onListed);
+  }
+
+  @override
+  void dispose() {
+    _closePage();
+    _page?.close();
+    super.dispose();
   }
 
   void _announceFallbacks(List<dynamic> fallbacks) {
@@ -330,6 +376,22 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
         },
       );
     }
+    if (_viaPage && _page != null) {
+      // One veil around the page, then the summary: the thread turns into it.
+      final writing = _loading && _pageListed;
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          DustVeil(
+            covered: writing,
+            child: _loading || entry == null
+                ? _PageLoading(page: _page!, listed: _pageListed)
+                : _summaryContent(entry, isDemo),
+          ),
+          if (writing) _WritingCaption(onCancel: _cancel),
+        ],
+      );
+    }
     if (_loading || entry == null) {
       return SummaryLoading(
         subreddit: widget.url == null ? null : extractSubreddit(widget.url!),
@@ -339,7 +401,11 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     return AnimatedSwitcher(
       duration: motion(context, 250),
       switchInCurve: Curves.easeOut,
-      child: _SummaryContent(
+      child: _summaryContent(entry, isDemo),
+    );
+  }
+
+  Widget _summaryContent(SummaryEntry entry, bool isDemo) => _SummaryContent(
         key: ValueKey('${entry.id}-${entry.createdAt.millisecondsSinceEpoch}-${entry.displayLang}'),
         entry: entry,
         modelName: _modelName,
@@ -351,11 +417,61 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
         translationError: _translationError,
         onTranslate: _translate,
         onLang: _setLang,
+      );
+
+  String _providerLabel() => (_entry?.provider ?? _provider)?.label ?? 'le fournisseur';
+}
+
+/// The Reddit page while its listing loads.
+class _PageLoading extends StatelessWidget {
+  const _PageLoading({required this.page, required this.listed});
+
+  final RedditPage page;
+  final bool listed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: listed ? 'Analyse par l\'IA en cours' : 'Récupération du thread',
+      liveRegion: true,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          ExcludeSemantics(child: WebViewWidget(controller: page.controller)),
+          if (!listed)
+            const Align(
+              alignment: Alignment.topCenter,
+              child: LinearProgressIndicator(minHeight: 2),
+            ),
+        ],
       ),
     );
   }
+}
 
-  String _providerLabel() => (_entry?.provider ?? _provider)?.label ?? 'le fournisseur';
+/// Over the dust while the AI writes: what is happening, and a way out.
+class _WritingCaption extends StatelessWidget {
+  const _WritingCaption({required this.onCancel});
+
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: SafeArea(
+        minimum: const EdgeInsets.all(Tokens.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Analyse par l\'IA…', style: context.text.label),
+            const SizedBox(height: Tokens.xs),
+            TextButton(onPressed: onCancel, child: const Text('Annuler')),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SummaryContent extends StatelessWidget {
