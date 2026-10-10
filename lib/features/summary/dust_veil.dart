@@ -129,6 +129,7 @@ class _Dust {
     phase = Float32List(count);
     speed = Float32List(count);
     threshold = Float32List(count);
+    points = List.generate(_DustPainter._buckets, (_) => Float32List(count * 2));
     for (var i = 0; i < count; i++) {
       x[i] = random.nextDouble() * size.width;
       y[i] = random.nextDouble() * size.height;
@@ -145,6 +146,9 @@ class _Dust {
   final Size size;
   final int count;
   late final Float32List x, y, vx, vy, phase, speed, threshold;
+
+  /// Per-alpha point buffers, reused every frame.
+  late final List<Float32List> points;
 }
 
 class _DustPainter extends CustomPainter {
@@ -177,7 +181,7 @@ class _DustPainter extends CustomPainter {
     final veilAlpha = Curves.easeInOut.transform(c) * (1 - Curves.easeOut.transform(reveal.value));
     canvas.drawRect(Offset.zero & size, Paint()..color = veil.withValues(alpha: veilAlpha));
 
-    final points = List.generate(_buckets, (_) => Float32List(dust.count * 2));
+    final points = dust.points;
     final counts = List.filled(_buckets, 0);
     final cx = w / 2, cy = h / 2;
     final scatter = r * r * (w + h) * 0.6;
