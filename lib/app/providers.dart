@@ -8,6 +8,7 @@ import '../data/db/app_database.dart';
 import '../data/db/summaries_dao.dart';
 import '../data/engine/direct_tldr_api.dart';
 import '../data/engine/reddit_client.dart';
+import '../data/engine/webview_reddit_client.dart';
 import '../data/secure/key_store.dart';
 import '../data/settings/settings_repository.dart';
 import '../data/models/models.dart';
@@ -25,11 +26,14 @@ final apiProvider = Provider<TldrApi>((ref) {
   if (AppConfig.isMock) return MockTldrApi();
   final settings = ref.watch(settingsProvider);
   return DirectTldrApi(
-    reddit: LiveRedditClient(
-      clientId: AppConfig.redditClientId,
-      userAgent: AppConfig.redditUserAgent,
-      deviceId: () => settings.deviceIdSync,
-    ),
+    // No approved Reddit app yet: read the public .json through a WebView.
+    reddit: AppConfig.redditClientId.isEmpty
+        ? WebViewRedditClient()
+        : LiveRedditClient(
+            clientId: AppConfig.redditClientId,
+            userAgent: AppConfig.redditUserAgent,
+            deviceId: () => settings.deviceIdSync,
+          ),
     catalog: () async => ProviderCatalog.fromJson(
         jsonDecode(await bundledCatalog()) as Map<String, dynamic>),
   );
