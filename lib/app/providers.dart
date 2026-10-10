@@ -8,6 +8,8 @@ import '../data/db/app_database.dart';
 import '../data/db/summaries_dao.dart';
 import '../data/engine/direct_tldr_api.dart';
 import '../data/engine/reddit_client.dart';
+import '../data/engine/reddit_page.dart';
+import '../data/engine/webview_reddit_client.dart';
 import '../data/secure/key_store.dart';
 import '../data/settings/settings_repository.dart';
 import '../data/models/models.dart';
@@ -25,15 +27,23 @@ final apiProvider = Provider<TldrApi>((ref) {
   if (AppConfig.isMock) return MockTldrApi();
   final settings = ref.watch(settingsProvider);
   return DirectTldrApi(
-    reddit: LiveRedditClient(
-      clientId: AppConfig.redditClientId,
-      userAgent: AppConfig.redditUserAgent,
-      deviceId: () => settings.deviceIdSync,
-    ),
+    // No approved Reddit app yet: read the public .json through a WebView.
+    reddit: AppConfig.redditClientId.isEmpty
+        ? WebViewRedditClient(host: ref.watch(redditPageHostProvider))
+        : LiveRedditClient(
+            clientId: AppConfig.redditClientId,
+            userAgent: AppConfig.redditUserAgent,
+            deviceId: () => settings.deviceIdSync,
+          ),
     catalog: () async => ProviderCatalog.fromJson(
         jsonDecode(await bundledCatalog()) as Map<String, dynamic>),
   );
 });
+
+/// Set when threads are read through a WebView (no Reddit client id): the
+/// Summary screen then shows the Reddit page while it loads.
+final redditPageHostProvider = Provider<RedditPageHost?>((ref) =>
+    AppConfig.isMock || AppConfig.redditClientId.isNotEmpty ? null : RedditPageHost());
 
 final summariesDaoProvider =
     Provider<SummariesDao>((ref) => SummariesDao(ref.watch(databaseProvider).db));

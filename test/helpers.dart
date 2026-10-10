@@ -54,6 +54,7 @@ class TestDeps {
   List<Override> get overrides => [
         databaseProvider.overrideWithValue(db),
         apiProvider.overrideWithValue(api),
+        redditPageHostProvider.overrideWithValue(null),
         keyStoreProvider.overrideWithValue(keys),
         settingsProvider.overrideWithValue(settings),
         summaryServiceProvider.overrideWithValue(service),

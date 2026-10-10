@@ -243,10 +243,12 @@ None. Every surface has `elevation: 0`; the app bar uses `scrolledUnderElevation
 - **Approach:** minimal-functional (spec D-16).
 - **Easing:** enter `Curves.easeOut`, exit `Curves.easeIn`, move `Curves.easeInOut`.
 - **Duration:** micro 100 ms, short 200 ms, medium 250 ms.
-- **The one authored moment:** the skeleton fading into the summary (250 ms ease-out). Everything is disabled when the system asks to reduce motion.
+- **The one authored moment:** the noise turning into calm. When threads are read through a WebView, the Summary screen shows the Reddit page; once the thread is read, the page dissolves into twinkling dust (`text`-coloured grains on a `surface` veil, 900 ms ease-out) that stays while the AI writes, with « Analyse par l'IA… » and « Annuler » on a flat `surface` band at the bottom. When the summary is ready, the dust scatters from the centre and reveals it (1100 ms ease-in). Without the WebView (Reddit app id configured), the skeleton fades into the summary (250 ms ease-out).
+- Everything is disabled when the system asks to reduce motion: the dust stays still and the reveal is instant.
 
 ## Decisions Log
 | Date | Decision | Rationale |
 |------|----------|-----------|
 | 2026-10-08 | Initial design system « Céladon » created | /design-consultation from the memorable thing « le calme après le bruit »; palette from the independent Claude subagent proposal, Literata-only-in-content rule from the cursor-agent proposal; fonts verified on Google Fonts; contrasts verified |
 | 2026-10-08 | Section gap 48 dp and gutter 20 dp | Replace spec D-14 (32 dp) and D-2 (16 dp) for a calmer reading rhythm |
+| 2026-10-10 | Telegram-style « spoiler » dust between the Reddit page and the summary | Requested by the user; it makes « le calme après le bruit » literal. Replaces the skeleton as the authored moment in WebView mode only |
