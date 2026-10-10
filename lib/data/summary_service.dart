@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
-import 'package:uuid/uuid.dart';
 
 import '../core/errors.dart';
 import '../core/reddit_url.dart';
@@ -43,7 +42,6 @@ class SummaryService {
   final KeyStore keys;
   final CatalogAssetLoader _catalogAsset;
   final DateTime Function() _clock;
-  static const _uuid = Uuid();
 
   // ---- Catalog --------------------------------------------------------------
 
@@ -55,9 +53,8 @@ class SummaryService {
         jsonDecode(await _catalogAsset()) as Map<String, dynamic>);
   }
 
-  /// Fetches the catalog from the engine (embedded in direct mode, server in a
-  /// future backend mode), caches it and replaces stored models that
-  /// disappeared. Failures keep the cache silently (spec D-4).
+  /// Fetches the catalog from the engine, caches it and replaces stored
+  /// models that disappeared. Failures keep the cache silently (spec D-4).
   Future<List<ModelFallback>> refreshCatalog() async {
     final ProviderCatalog fresh;
     try {
@@ -153,7 +150,6 @@ class SummaryService {
     }
     final pending = resume ??
         PendingSummary(
-          idempotencyKey: _uuid.v4(),
           url: url,
           provider: provider,
           model: await effectiveModel(provider),
@@ -184,7 +180,6 @@ class SummaryService {
         provider: pending.provider,
         model: pending.model,
         apiKey: apiKey,
-        idempotencyKey: pending.idempotencyKey,
         cancelToken: cancelToken,
       );
     } on ApiError catch (e) {
@@ -196,7 +191,6 @@ class SummaryService {
         provider: pending.provider,
         model: await effectiveModel(pending.provider),
         apiKey: apiKey,
-        idempotencyKey: _uuid.v4(),
         cancelToken: cancelToken,
       );
     }
@@ -216,7 +210,6 @@ class SummaryService {
       provider: provider,
       model: await effectiveModel(provider),
       apiKey: apiKey,
-      idempotencyKey: _uuid.v4(),
     );
     return dao.upsert(result, sourceUrl: entry.sourceUrl);
   }

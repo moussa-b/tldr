@@ -60,7 +60,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  mocktail: ^1.0.5
   sqflite_common_ffi: ^2.3.6
   flutter_launcher_icons: ^0.14.4
 
@@ -77,8 +76,7 @@ flutter:
 
   assets:
     - assets/catalog.json
-    - assets/fixtures/api/
-    - assets/fixtures/api/errors/
+    - assets/demo/
     # Drop the IBM Plex Sans / Literata .ttf files here to bundle them
     # (google_fonts uses bundled files first, see tool/fetch_fonts.sh).
     - assets/google_fonts/

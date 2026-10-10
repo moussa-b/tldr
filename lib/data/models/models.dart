@@ -1,5 +1,5 @@
-// Hand-written immutable models mirroring docs/api/openapi.yaml (eng review D2:
-// no freezed/json_serializable). Field names follow the JSON contract.
+// Hand-written immutable models (eng review D2: no freezed/json_serializable).
+// Their JSON shape is what the history table stores and the demo summary uses.
 
 enum ProviderId {
   gemini,

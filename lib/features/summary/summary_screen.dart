@@ -88,7 +88,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
         }
         _show(entry);
       case SummaryMode.demo:
-        final raw = await rootBundle.loadString('assets/fixtures/api/summary_fr.json');
+        final raw = await rootBundle.loadString('assets/demo/summary_fr.json');
         final result = SummaryResult.fromJson(jsonDecode(raw) as Map<String, dynamic>);
         _show(SummaryEntry(
           id: 'demo',

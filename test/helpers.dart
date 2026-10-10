@@ -9,7 +9,6 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:tldr/app/app.dart';
 import 'package:tldr/app/providers.dart';
 import 'package:tldr/app/theme.dart';
-import 'package:tldr/data/api/mock/mock_tldr_api.dart';
 import 'package:tldr/data/api/tldr_api.dart';
 import 'package:tldr/data/db/app_database.dart';
 import 'package:tldr/data/db/summaries_dao.dart';
@@ -20,8 +19,12 @@ import 'package:tldr/data/summary_service.dart';
 import 'package:tldr/features/home/home_screen.dart';
 import 'package:tldr/features/share/share_intent_source.dart';
 
-Future<String> fileFixture(String path) =>
-    File('assets/fixtures/api/$path').readAsString();
+import 'fake_tldr_api.dart';
+
+/// A test fixture (test/fixtures), or the demo summary.
+Future<String> fileFixture(String name) => File(
+        name == 'summary_fr.json' ? 'assets/demo/summary_fr.json' : 'test/fixtures/$name')
+    .readAsString();
 
 Future<String> fileCatalog() => File('assets/catalog.json').readAsString();
 
@@ -35,7 +38,6 @@ Future<AppDatabase> openTestDb() =>
     AppDatabase.open(
         factory: databaseFactoryFfi, path: inMemoryDatabasePath, singleInstance: false);
 
-MockTldrApi testMockApi() => MockTldrApi(loader: fileFixture, simulateLatency: false);
 
 class TestDeps {
   TestDeps(this.db, this.api, this.keys)
@@ -62,7 +64,7 @@ class TestDeps {
 }
 
 Future<TestDeps> testDeps({TldrApi? api, Map<ProviderId, String>? keys}) async =>
-    TestDeps(await openTestDb(), api ?? testMockApi(),
+    TestDeps(await openTestDb(), api ?? FakeTldrApi(),
         MemoryKeyStore(keys ?? {ProviderId.gemini: 'AIza-test-key'}));
 
 /// Pumps the whole app. The DB work happens through sqflite_ffi on real I/O,

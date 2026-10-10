@@ -11,9 +11,8 @@ import 'llm_client.dart';
 import 'prompts.dart';
 import 'reddit_client.dart';
 
-/// [TldrApi] running entirely on the device (`API_MODE=direct`): reads Reddit,
-/// selects comments and calls the user's AI provider. Same error codes and
-/// behaviour as the former backend contract (spec « Révision 2026-10-09 »).
+/// [TldrApi] running entirely on the device: reads Reddit, selects comments
+/// and calls the user's AI provider (spec « Moteur sur l'appareil »).
 class DirectTldrApi implements TldrApi {
   DirectTldrApi({
     required this.reddit,
@@ -50,7 +49,6 @@ class DirectTldrApi implements TldrApi {
     required ProviderId provider,
     String? model,
     required String apiKey,
-    required String idempotencyKey,
     ApiCancelToken? cancelToken,
   }) async {
     final started = _clock();

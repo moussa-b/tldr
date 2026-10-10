@@ -1,6 +1,5 @@
-/// Error surfaced by [TldrApi]. `code` is one of the contract error codes
-/// (docs/api/openapi.yaml `ErrorCode`) or a client-only code
-/// (`NETWORK_ERROR`, `TIMEOUT`, `CANCELLED`).
+/// Error surfaced by [TldrApi]. `code` is one of the error codes of the spec
+/// (« Codes d'erreur »).
 class ApiError implements Exception {
   const ApiError({
     required this.code,
@@ -15,21 +14,8 @@ class ApiError implements Exception {
   final bool retryable;
   final int? retryAfterSeconds;
 
-  /// `details.reason` (THREAD_UNAVAILABLE, VALIDATION_ERROR).
+  /// Why a thread is unavailable, or why Reddit refused (`blocked`).
   final String? reason;
-
-  factory ApiError.fromBody(Map<String, dynamic> body, {int? retryAfterHeader}) {
-    final error = body['error'] as Map<String, dynamic>;
-    final details = error['details'] as Map<String, dynamic>?;
-    return ApiError(
-      code: error['code'] as String,
-      message: error['message'] as String,
-      retryable: error['retryable'] as bool,
-      retryAfterSeconds:
-          (details?['retryAfterSeconds'] as num?)?.toInt() ?? retryAfterHeader,
-      reason: details?['reason'] as String?,
-    );
-  }
 
   static const network = ApiError(
       code: 'NETWORK_ERROR', message: 'Network error', retryable: true);
@@ -45,7 +31,7 @@ class ApiError implements Exception {
         'LLM_MODEL_UNAVAILABLE',
       }.contains(code);
 
-  bool get hasCountdown => code == 'RATE_LIMITED' || code == 'LLM_QUOTA_EXCEEDED';
+  bool get hasCountdown => code == 'LLM_QUOTA_EXCEEDED';
 
   @override
   String toString() => 'ApiError($code: $message)';
@@ -61,9 +47,6 @@ class ErrorCopy {
 
 ErrorCopy errorCopy(ApiError error, {String providerLabel = 'le fournisseur'}) {
   switch (error.code) {
-    case 'RATE_LIMITED':
-      return const ErrorCopy('Trop de demandes',
-          'Tu as lancé beaucoup de résumés en peu de temps. Patiente un instant.');
     case 'LLM_QUOTA_EXCEEDED':
       return ErrorCopy('Quota du fournisseur atteint',
           'Ton quota $providerLabel est épuisé pour le moment.');
@@ -122,9 +105,6 @@ ErrorCopy errorCopy(ApiError error, {String providerLabel = 'le fournisseur'}) {
       }
       return const ErrorCopy('Reddit ne répond pas',
           'Reddit est indisponible pour le moment. Réessaie.');
-    case 'APP_KEY_INVALID':
-      return const ErrorCopy('Version de l\'app refusée',
-          'Mets TL;DR+ à jour pour continuer.');
     default:
       return const ErrorCopy('Une erreur est survenue', 'Réessaie dans un moment.');
   }

@@ -85,7 +85,7 @@ void main() {
   test('normalizes emotions and rounds toxicity', () async {
     final llm = ScriptedLlm([Map<String, dynamic>.from(_valid)]);
     final r = await engine(llm).summarize(
-        url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k', idempotencyKey: 'i');
+        url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k');
     expect(r.analysis.emotions, ['hope']);
     expect(r.analysis.toxicity, 0.12);
     expect(r.meta.model, 'gemini-2.5-flash');
@@ -98,7 +98,7 @@ void main() {
       Map<String, dynamic>.from(_valid),
     ]);
     await engine(llm).summarize(
-        url: 'https://redd.it/abc123', provider: ProviderId.openai, apiKey: 'k', idempotencyKey: 'i');
+        url: 'https://redd.it/abc123', provider: ProviderId.openai, apiKey: 'k');
     expect(llm.requests, hasLength(2));
     expect(llm.requests.last.user, contains('previous answer was invalid'));
   });
@@ -107,7 +107,7 @@ void main() {
     final llm = ScriptedLlm([{'x': 1}, {'y': 2}]);
     expect(
       engine(llm).summarize(
-          url: 'https://redd.it/abc123', provider: ProviderId.anthropic, apiKey: 'k', idempotencyKey: 'i'),
+          url: 'https://redd.it/abc123', provider: ProviderId.anthropic, apiKey: 'k'),
       throwsA(isA<ApiError>().having((e) => e.code, 'code', 'LLM_OUTPUT_INVALID')),
     );
   });
@@ -121,7 +121,7 @@ void main() {
       return now;
     });
     await expectLater(
-      api.summarize(url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k', idempotencyKey: 'i'),
+      api.summarize(url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k'),
       throwsA(isA<ApiError>().having((e) => e.code, 'code', 'LLM_OUTPUT_INVALID')),
     );
     expect(llm.requests, hasLength(1));
@@ -131,7 +131,7 @@ void main() {
     final llm = ScriptedLlm([]);
     await expectLater(
       engine(llm, thread: redditThread(comments: const [], selftext: '')).summarize(
-          url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k', idempotencyKey: 'i'),
+          url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k'),
       throwsA(isA<ApiError>().having((e) => e.code, 'code', 'THREAD_EMPTY')),
     );
     expect(llm.requests, isEmpty);
@@ -143,8 +143,7 @@ void main() {
           url: 'https://redd.it/abc123',
           provider: ProviderId.gemini,
           model: 'nope',
-          apiKey: 'k',
-          idempotencyKey: 'i'),
+          apiKey: 'k'),
       throwsA(isA<ApiError>().having((e) => e.code, 'code', 'UNSUPPORTED_MODEL')),
     );
   });

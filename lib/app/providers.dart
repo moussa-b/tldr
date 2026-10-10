@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/api/mock/mock_tldr_api.dart';
 import '../data/api/tldr_api.dart';
 import '../data/db/app_database.dart';
 import '../data/db/summaries_dao.dart';
@@ -22,9 +21,8 @@ final databaseProvider = Provider<AppDatabase>(
 
 final keyStoreProvider = Provider<KeyStore>((ref) => SecureKeyStore());
 
-/// Swap point for a future backend: return a `BackendTldrApi` here.
+/// Reads Reddit and calls the user's AI provider, all on the device.
 final apiProvider = Provider<TldrApi>((ref) {
-  if (AppConfig.isMock) return MockTldrApi();
   final settings = ref.watch(settingsProvider);
   return DirectTldrApi(
     // No approved Reddit app yet: read the public .json through a WebView.
@@ -43,7 +41,7 @@ final apiProvider = Provider<TldrApi>((ref) {
 /// Set when threads are read through a WebView (no Reddit client id): the
 /// Summary screen then shows the Reddit page while it loads.
 final redditPageHostProvider = Provider<RedditPageHost?>((ref) =>
-    AppConfig.isMock || AppConfig.redditClientId.isNotEmpty ? null : RedditPageHost());
+    AppConfig.redditClientId.isNotEmpty ? null : RedditPageHost());
 
 final summariesDaoProvider =
     Provider<SummariesDao>((ref) => SummariesDao(ref.watch(databaseProvider).db));

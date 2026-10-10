@@ -6,9 +6,10 @@ import 'package:tldr/data/engine/reddit_client.dart';
 import 'package:tldr/data/models/models.dart';
 import 'package:tldr/data/summary_service.dart';
 
+import '../fake_tldr_api.dart';
 import '../helpers.dart';
 
-/// Mock API whose validateKey can fail on the network.
+/// Fake API whose validateKey can fail on the network.
 class FlakyKeyApi implements TldrApi {
   FlakyKeyApi(this.inner);
 
@@ -29,11 +30,9 @@ class FlakyKeyApi implements TldrApi {
     required ProviderId provider,
     String? model,
     required String apiKey,
-    required String idempotencyKey,
     ApiCancelToken? cancelToken,
   }) =>
-      inner.summarize(
-          url: url, provider: provider, model: model, apiKey: apiKey, idempotencyKey: idempotencyKey);
+      inner.summarize(url: url, provider: provider, model: model, apiKey: apiKey);
 
   @override
   Future<TranslationResult> translate({
@@ -50,7 +49,7 @@ void main() {
   setUpAll(initTestEnv);
 
   test('saveKey: valid, refused (not stored), unverified on network error, empty', () async {
-    final deps = await testDeps(api: FlakyKeyApi(testMockApi()), keys: {});
+    final deps = await testDeps(api: FlakyKeyApi(FakeTldrApi()), keys: {});
     final s = deps.service;
     expect(await s.saveKey(ProviderId.openai, 'invalid'), KeySaveResult.refused);
     expect(await deps.keys.read(ProviderId.openai), isNull);
@@ -104,42 +103,6 @@ void main() {
     final translated = await deps.service.translate(entry);
     expect(translated.displayLang, 'fr');
     expect(translated.displayed.language, 'fr');
-  });
-
-  group('mock triggers', () {
-    final cases = {
-      'https://www.reddit.com/r/x/comments/notfound/': 'THREAD_NOT_FOUND',
-      'https://www.reddit.com/r/x/comments/deleted1/': 'THREAD_UNAVAILABLE',
-      'https://www.reddit.com/user/someone/': 'UNSUPPORTED_URL',
-      'https://www.reddit.com/r/x/comments/ratelimit/': 'RATE_LIMITED',
-      'https://www.reddit.com/r/x/comments/timeout1/': 'TIMEOUT',
-      'https://example.com/a': 'INVALID_URL',
-    };
-    cases.forEach((url, code) {
-      test(code, () async {
-        await expectLater(
-          testMockApi().summarize(url: url, provider: ProviderId.gemini, apiKey: 'k', idempotencyKey: 'i'),
-          throwsA(isA<ApiError>().having((e) => e.code, 'code', code)),
-        );
-      });
-    });
-    test('key triggers', () async {
-      for (final (key, code) in [('invalid', 'LLM_KEY_INVALID'), ('quota', 'LLM_QUOTA_EXCEEDED')]) {
-        await expectLater(
-          testMockApi().summarize(
-              url: 'https://redd.it/1abc23d', provider: ProviderId.gemini, apiKey: key, idempotencyKey: 'i'),
-          throwsA(isA<ApiError>().having((e) => e.code, 'code', code)),
-        );
-      }
-    });
-    test('same idempotency key replays without a second call', () async {
-      final api = testMockApi();
-      for (var i = 0; i < 2; i++) {
-        await api.summarize(
-            url: 'https://redd.it/1abc23d', provider: ProviderId.gemini, apiKey: 'k', idempotencyKey: 'same');
-      }
-      expect(api.summarizeCalls, 1);
-    });
   });
 
   group('Reddit listing parsing', () {
