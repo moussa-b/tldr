@@ -163,7 +163,8 @@ class RedditPage {
       done.completeError(error);
     } else {
       done.complete(result!);
-      listed.value = true;
+      // A 404 or a closed thread ends in an error, not under the dust.
+      listed.value = result.status == 200;
     }
   }
 }
