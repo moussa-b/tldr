@@ -159,6 +159,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       });
     } finally {
       _closePage();
+      // Off screen by now (summary or error): stop Reddit's scripts.
+      _page?.close();
     }
   }
 
@@ -177,8 +179,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     if (mounted) setState(() => _pageListed = _page?.listed.value ?? false);
   }
 
-  /// The WebView stays on screen until the summary replaces it; only the
-  /// host link and Reddit's scripts go.
+  /// Unlinks the page from the Reddit client; it stays on screen until the
+  /// summary or the error replaces it.
   void _closePage() {
     final host = _host;
     if (host != null && identical(host.visible, _page)) host.visible = null;
@@ -393,6 +395,11 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       );
     }
     if (_loading || entry == null) {
+      // The Reddit page is about to open: no skeleton flash before it.
+      if (widget.mode == SummaryMode.create && _host == null &&
+          ref.read(redditPageHostProvider) != null && !_loading) {
+        return const SizedBox.expand();
+      }
       return SummaryLoading(
         subreddit: widget.url == null ? null : extractSubreddit(widget.url!),
         onCancel: _cancel,
@@ -457,17 +464,25 @@ class _WritingCaption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A flat band of surface keeps the caption legible over the dust.
     return Align(
       alignment: Alignment.bottomCenter,
-      child: SafeArea(
-        minimum: const EdgeInsets.all(Tokens.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Analyse par l\'IA…', style: context.text.label),
-            const SizedBox(height: Tokens.xs),
-            TextButton(onPressed: onCancel, child: const Text('Annuler')),
-          ],
+      child: ColoredBox(
+        color: context.scheme.surface,
+        child: SafeArea(
+          top: false,
+          minimum: const EdgeInsets.symmetric(vertical: Tokens.md),
+          child: SizedBox(
+            width: double.infinity,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Analyse par l\'IA…', style: context.text.label),
+                const SizedBox(height: Tokens.xs),
+                TextButton(onPressed: onCancel, child: const Text('Annuler')),
+              ],
+            ),
+          ),
         ),
       ),
     );

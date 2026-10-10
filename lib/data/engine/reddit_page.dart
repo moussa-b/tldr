@@ -32,8 +32,11 @@ class RedditPage {
           _pageUrl = url;
           _busy = false;
         },
+        // The cookie sheet shows up long before the page finishes loading.
+        onProgress: (_) => _hideConsentSheet(),
         onPageFinished: (url) {
           _pageUrl = url;
+          _hideConsentSheet();
           _tryListing();
         },
         onWebResourceError: (error) {
@@ -79,7 +82,10 @@ class RedditPage {
     });
     // Reddit's full thread page can take longer to finish loading than the
     // timeout, so the listing is also tried on a tick.
-    _ticker = Timer.periodic(const Duration(seconds: 2), (_) => _tryListing());
+    _ticker = Timer.periodic(const Duration(seconds: 2), (_) {
+      _hideConsentSheet();
+      _tryListing();
+    });
     controller.loadRequest(Uri.parse(start)).catchError((Object _) => _finish(
         error: const ApiError(
             code: 'REDDIT_UNAVAILABLE', message: 'WebView failed', retryable: true)));
@@ -107,6 +113,17 @@ class RedditPage {
     return id == null || id == _postId
         ? NavigationDecision.navigate
         : NavigationDecision.prevent;
+  }
+
+  /// Reddit's cookie sheet would cover the post for the few seconds it is on
+  /// screen. Hiding it answers nothing: only essential cookies apply.
+  void _hideConsentSheet() {
+    const script = 'if (document.head && !document.getElementById("tldr-hide")) {'
+        'const s = document.createElement("style"); s.id = "tldr-hide";'
+        's.textContent = "#data-protection-consent-wrapper, #data-protection-consent-sheet,'
+        ' #data-protection-consent-dialog { display: none !important; }";'
+        'document.head.appendChild(s); }';
+    unawaited(controller.runJavaScript(script).catchError((_) {}));
   }
 
   void _tryListing() {
