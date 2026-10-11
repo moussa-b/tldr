@@ -207,7 +207,7 @@ Avant l'appel, la tentative est écrite dans `settings.pendingSummary` (`{url, p
 
 ### Dépendances
 
-`flutter_riverpod` (providers écrits à la main), `go_router`, `dio`, `sqflite` + `path`/`path_provider`, `flutter_secure_storage`, `receive_sharing_intent` (épinglé 1.9.0, chemin versionné référencé par la Share Extension), `share_plus`, `url_launcher`, `intl`, `uuid`, `google_fonts`, `webview_flutter`. Tests : `flutter_test`, `sqflite_common_ffi`. Flutter 3.47.5 épinglé via FVM ; plugins iOS par Swift Package Manager (pas de CocoaPods).
+`flutter_riverpod` (providers écrits à la main), `go_router`, `dio`, `sqflite` + `path`/`path_provider`, `flutter_secure_storage`, `receive_sharing_intent` (épinglé 1.9.0, chemin versionné référencé par la Share Extension), `share_plus`, `url_launcher`, `intl`, `uuid`, `webview_flutter`. Tests : `flutter_test`, `sqflite_common_ffi`. Flutter 3.47.5 épinglé via FVM ; plugins iOS par Swift Package Manager (pas de CocoaPods).
 
 ### Thème
 
@@ -235,7 +235,7 @@ lib/
     summary_service.dart
   features/
     home/ settings/ setup/ share/ summary/ (summary_screen.dart, summary_widgets.dart, dust_veil.dart)
-assets/           catalog.json, demo/summary_fr.json, icon/, google_fonts/
+assets/           catalog.json, demo/summary_fr.json, icon/, fonts/ (IBM Plex Sans et Literata embarquées, licence OFL)
 test/             fake_tldr_api.dart, fixtures/, core/, data/, widget/
 ios/ShareExtension/
 ```

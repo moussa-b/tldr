@@ -30,7 +30,6 @@ Future<String> fileCatalog() => File('assets/catalog.json').readAsString();
 
 Future<void> initTestEnv() async {
   sqfliteFfiInit();
-  AppFonts.useGoogleFonts = false;
   await initializeDateFormatting('fr_FR');
 }
 

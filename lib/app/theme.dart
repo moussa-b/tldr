@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Tokens from DESIGN.md (« Céladon »). Change DESIGN.md first, then here.
 class Tokens {
@@ -76,17 +75,16 @@ extension AppThemeX on BuildContext {
   AppText get text => AppText.of(this);
 }
 
-/// Font access. Tests set [useGoogleFonts] to false to avoid network fetches.
+/// Fonts bundled with the app (pubspec.yaml `fonts:`), never downloaded.
 class AppFonts {
   const AppFonts._();
 
-  static bool useGoogleFonts = true;
+  static const uiFamily = 'IBM Plex Sans';
+  static const readingFamily = 'Literata';
 
-  static TextStyle ui(TextStyle style) =>
-      useGoogleFonts ? GoogleFonts.ibmPlexSans(textStyle: style) : style;
+  static TextStyle ui(TextStyle style) => style.copyWith(fontFamily: uiFamily);
 
-  static TextStyle reading(TextStyle style) =>
-      useGoogleFonts ? GoogleFonts.literata(textStyle: style) : style;
+  static TextStyle reading(TextStyle style) => style.copyWith(fontFamily: readingFamily);
 }
 
 /// Text styles per element (DESIGN.md « Typography »).
@@ -193,12 +191,11 @@ class AppTheme {
       scaffoldBackgroundColor: scheme.surface,
       extensions: [colors],
     );
-    final uiFamily = AppFonts.ui(const TextStyle()).fontFamily;
     final shape8 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Tokens.rMd));
     final shape6 = RoundedRectangleBorder(borderRadius: BorderRadius.circular(Tokens.rSm));
     return base.copyWith(
       textTheme: base.textTheme.apply(
-          fontFamily: uiFamily, bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
+          fontFamily: AppFonts.uiFamily, bodyColor: scheme.onSurface, displayColor: scheme.onSurface),
       appBarTheme: AppBarTheme(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
