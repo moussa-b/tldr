@@ -48,6 +48,34 @@ void main() {
     await tearDownApp(tester);
   });
 
+  testWidgets('a key saved on the way to a summary hides the home key banner', (tester) async {
+    // Regression: ISSUE-002 — Home kept « Ajoute ta clé IA » after a key was saved through a pasted link
+    // Found by /qa on 2026-10-11
+    // Report: docs/qa/2026-10-11/qa-report-tldr-2026-10-11.md
+    final deps = await tester.runAsync(() => testDeps(keys: {}));
+    await pumpApp(tester, deps!);
+    await tester.tap(find.byType(BackButton));
+    await settle(tester);
+    expect(find.text('Ajoute ta clé IA pour commencer'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'https://www.reddit.com/r/france/comments/1abc23d/x/');
+    await tester.pump();
+    await tester.tap(find.text('Résumer'));
+    await settle(tester);
+    await tester.tap(find.text('Continuer'));
+    await settle(tester);
+    await tester.enterText(find.byType(TextField), 'AIza-test-key');
+    await tester.tap(find.text('Vérifier'));
+    await settle(tester, rounds: 60);
+    expect(find.text('En bref'), findsOneWidget);
+
+    await tester.tap(find.byType(BackButton));
+    await settle(tester);
+    expect(find.text('Récents'), findsOneWidget);
+    expect(find.text('Ajoute ta clé IA pour commencer'), findsNothing);
+    await tearDownApp(tester);
+  });
+
   testWidgets('a non-Reddit link shows a helper error and does not navigate', (tester) async {
     final deps = await tester.runAsync(testDeps);
     await pumpApp(tester, deps!);
