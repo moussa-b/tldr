@@ -66,7 +66,10 @@ class _VerdictLineState extends State<VerdictLine> {
               borderRadius: BorderRadius.circular(Tokens.rXs),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+                // Factors of 1: a bare Center would fill the Wrap's whole line.
                 child: Center(
+                  widthFactor: 1,
+                  heightFactor: 1,
                   child: Text(' +$hidden',
                       style: style.copyWith(color: scheme.onSurfaceVariant)),
                 ),
