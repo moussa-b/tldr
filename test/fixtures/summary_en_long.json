@@ -27,7 +27,7 @@
   },
   "meta": {
     "provider": "gemini",
-    "model": "gemini-2.5-flash",
+    "model": "gemini-3.8-flash",
     "commentsAnalyzed": 200,
     "commentsTotal": 5412,
     "truncated": true,

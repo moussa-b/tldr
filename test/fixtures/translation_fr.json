@@ -14,7 +14,7 @@
   },
   "meta": {
     "provider": "gemini",
-    "model": "gemini-2.5-flash",
+    "model": "gemini-3.8-flash",
     "generatedAt": "2026-10-08T21:03:00Z",
     "durationMs": 6120
   }

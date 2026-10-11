@@ -17,7 +17,7 @@ Référence fonctionnelle — RedditAI `src/reddit_ai.py` / `src/schema.py` :
 |---|---|
 | Fetch post + commentaires via PRAW | ✅ autrement (voir « Lecture de Reddit ») |
 | `replace_more(75)`, aucun plafond de taille du prompt | ❌ remplacé par budget 200 commentaires / 60 000 caractères |
-| Gemini `gemini-2.5-flash`, `temperature=0.2`, JSON via `response_schema` | ✅ + Anthropic + OpenAI |
+| Gemini `gemini-3.8-flash`, `temperature=0.2`, JSON via `response_schema` | ✅ + Anthropic + OpenAI |
 | Sortie : `short_summary`, `detailed_viewpoint_summary`, `sentiment_analysis`, `emotion_detection` (15 labels), `toxicity_detection` (0..1), `ai_take` | ✅ mêmes champs (camelCase) + `language` |
 | Webhook Discord, formulaire feedback | ❌ hors périmètre |
 | Historique | ✅ local SQLite |
@@ -341,7 +341,7 @@ Décisions de design approuvées une par une. En cas de conflit avec la section 
 │ ╭ L'avis de l'IA ─────────────────╮ │  5. conteneur teinté sans ombre (D-14), opinion ≠ fait
 │ ─────────────────────────────────── │
 │ 1,8k points · 93 % · 612 comm.      │  6. stats du post + « 200 commentaires analysés
-│ 200 analysés sur 612 · Gemini 2.5…  │     sur 612 · <modèle> » (bodySmall, onSurfaceVariant)
+│ 200 analysés sur 612 · Gemini 3.8…  │     sur 612 · <modèle> » (bodySmall, onSurfaceVariant)
 └─────────────────────────────────────┘
 ```
 

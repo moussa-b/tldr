@@ -63,5 +63,6 @@ fvm flutter test
 | Partage Android (intent `SEND text/plain`) | ✅ L'APK debug compile (AGP 9.2.1, Gradle 9.4.1, compileSdk 37). |
 | Partage iOS (Share Extension liée au paquet SPM `receive-sharing-intent`, App Group `group.com.bdzapps.tldr`, cycle de vie UIScene) | ✅ L'app compile pour le simulateur, extension embarquée. Sur iPhone réel : choisir ton équipe de signature et activer l'App Group dans Xcode sur les deux cibles. `receive_sharing_intent` est épinglé en 1.9.0 parce que l'extension le référence par son chemin versionné : en cas de montée de version, mettre à jour ce chemin dans le projet Xcode. |
 | Polices Plex Sans + Literata | ⚠️ Téléchargées par `google_fonts` au premier lancement. `tool/fetch_fonts.sh` permet de les embarquer. |
-| Identifiants de modèles (`assets/catalog.json`) | ⚠️ À vérifier dans la documentation de chaque fournisseur. |
-| Tests | 70 tests : unitaires, moteur, widgets, accessibilité, texte à 200 %, transition poussière |
+| Identifiants de modèles (`assets/catalog.json`) | Gemini vérifié le 2026-10-11 (`gemini-2.5-*` n'est plus ouvert aux nouveaux comptes). ⚠️ Anthropic et OpenAI à vérifier. |
+| Tests | 71 tests : unitaires, moteur, widgets, accessibilité, texte à 200 %, transition poussière, et un vrai résumé Gemini (`test/live/`, clés dans `gemini.keys`, ignoré sans ce fichier) |
+| Vrai résumé sur appareil | `tool/live_summary.sh <device>` lit un thread par la WebView et le résume avec Gemini. Vérifié sur simulateur iOS le 2026-10-11. |

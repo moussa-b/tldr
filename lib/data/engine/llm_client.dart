@@ -171,6 +171,8 @@ class GeminiClient extends _RestLlmClient {
           'maxOutputTokens': 8192,
           'responseMimeType': 'application/json',
           'responseSchema': r.geminiSchema,
+          // Gemini 3 thinks at length by default and blows the 90 s deadline.
+          'thinkingConfig': {'thinkingLevel': 'low'},
         },
       },
       {'x-goog-api-key': r.apiKey},

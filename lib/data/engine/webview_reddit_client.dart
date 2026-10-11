@@ -9,8 +9,6 @@ import 'reddit_page.dart';
 
 /// Reads a thread's public `.json` listing through a [RedditPage]: the one the
 /// Summary screen shows if [host] has one, an offscreen page otherwise.
-///
-/// Experimental (branch `feat/webview-json-fetch`).
 class WebViewRedditClient implements RedditClient {
   WebViewRedditClient({this.host, this.timeout = const Duration(seconds: 25)});
 

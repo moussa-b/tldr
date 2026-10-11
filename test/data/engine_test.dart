@@ -88,7 +88,7 @@ void main() {
         url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k');
     expect(r.analysis.emotions, ['hope']);
     expect(r.analysis.toxicity, 0.12);
-    expect(r.meta.model, 'gemini-2.5-flash');
+    expect(r.meta.model, 'gemini-3.8-flash');
     expect(r.meta.commentsAnalyzed, 1);
   });
 

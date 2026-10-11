@@ -91,8 +91,8 @@ void main() {
     final deps = await testDeps();
     await deps.settings.setModel(ProviderId.gemini, 'gemini-1.0-retired');
     final fallbacks = await deps.service.refreshCatalog();
-    expect(fallbacks.single.to, 'gemini-2.5-flash');
-    expect(await deps.settings.model(ProviderId.gemini), 'gemini-2.5-flash');
+    expect(fallbacks.single.to, 'gemini-3.8-flash');
+    expect(await deps.settings.model(ProviderId.gemini), 'gemini-3.8-flash');
   });
 
   test('translate stores the French version and shows it', () async {
