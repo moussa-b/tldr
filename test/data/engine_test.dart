@@ -127,6 +127,57 @@ void main() {
     expect(llm.requests, hasLength(1));
   });
 
+  group('fallback model', () {
+    const unavailable =
+        ApiError(code: 'LLM_UNAVAILABLE', message: 'Provider unavailable', retryable: true);
+
+    test('an overloaded model hands over to the fallback', () async {
+      final llm = ScriptedLlm([unavailable, Map<String, dynamic>.from(_valid)]);
+      final r = await engine(llm).summarize(
+          url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k');
+      expect(llm.requests.map((q) => q.model), ['gemini-3.8-flash', 'gemini-3.5-flash']);
+      expect(r.meta.model, 'gemini-3.5-flash');
+    });
+
+    test('a model that does not answer leaves 25 s to the fallback', () async {
+      final llm = ScriptedLlm([ApiError.timeout, Map<String, dynamic>.from(_valid)]);
+      final r = await engine(llm).summarize(
+          url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k');
+      expect(llm.requests.first.timeout, lessThanOrEqualTo(const Duration(seconds: 65)));
+      expect(llm.requests.last.timeout, greaterThan(const Duration(seconds: 65)));
+      expect(r.meta.model, 'gemini-3.5-flash');
+    });
+
+    test('a failing fallback gives its own error, with no third call', () async {
+      final llm = ScriptedLlm([unavailable, ApiError.timeout, Map<String, dynamic>.from(_valid)]);
+      await expectLater(
+        engine(llm).summarize(
+            url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k'),
+        throwsA(isA<ApiError>().having((e) => e.code, 'code', 'TIMEOUT')),
+      );
+      expect(llm.requests, hasLength(2));
+    });
+
+    test('a refused key or a provider without fallback is not retried', () async {
+      const refused =
+          ApiError(code: 'LLM_KEY_INVALID', message: 'Key refused', retryable: false);
+      final gemini = ScriptedLlm([refused, Map<String, dynamic>.from(_valid)]);
+      await expectLater(
+        engine(gemini).summarize(
+            url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k'),
+        throwsA(isA<ApiError>().having((e) => e.code, 'code', 'LLM_KEY_INVALID')),
+      );
+      final openai = ScriptedLlm([unavailable, Map<String, dynamic>.from(_valid)]);
+      await expectLater(
+        engine(openai).summarize(
+            url: 'https://redd.it/abc123', provider: ProviderId.openai, apiKey: 'k'),
+        throwsA(isA<ApiError>().having((e) => e.code, 'code', 'LLM_UNAVAILABLE')),
+      );
+      expect(gemini.requests, hasLength(1));
+      expect(openai.requests, hasLength(1));
+    });
+  });
+
   test('empty thread gives THREAD_EMPTY without calling the LLM', () async {
     final llm = ScriptedLlm([]);
     await expectLater(

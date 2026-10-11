@@ -26,6 +26,17 @@ class LlmRequest {
   final Map<String, dynamic> geminiSchema;
   final String toolName;
   final Duration timeout;
+
+  LlmRequest copyWith({String? model, String? user, Duration? timeout}) => LlmRequest(
+        model: model ?? this.model,
+        apiKey: apiKey,
+        system: system,
+        user: user ?? this.user,
+        schema: schema,
+        geminiSchema: geminiSchema,
+        toolName: toolName,
+        timeout: timeout ?? this.timeout,
+      );
 }
 
 /// Calls an LLM provider directly over REST (no SDK).

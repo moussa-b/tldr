@@ -5,6 +5,7 @@
       "name": "Google Gemini",
       "keyHelpUrl": "https://aistudio.google.com/apikey",
       "keyPattern": "^(AIza[0-9A-Za-z_-]{35}|AQ\\.[0-9A-Za-z_-]{20,})$",
+      "fallbackModel": "gemini-3.5-flash",
       "models": [
         {
           "id": "gemini-3.8-flash",

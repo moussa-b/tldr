@@ -69,10 +69,11 @@ class DirectTldrApi implements TldrApi {
           code: 'THREAD_EMPTY', message: 'Nothing to summarize', retryable: false);
     }
 
-    final analysis = await _generate(
+    final (analysis, usedModel) = await _generate(
       provider: provider,
       started: started,
       dioToken: dioToken,
+      fallbackModel: await _fallbackModel(provider),
       request: LlmRequest(
         model: modelId,
         apiKey: apiKey.trim(),
@@ -90,7 +91,7 @@ class DirectTldrApi implements TldrApi {
       analysis: analysis,
       meta: SummaryMeta(
         provider: provider,
-        model: modelId,
+        model: usedModel,
         commentsAnalyzed: selection.analyzed,
         commentsTotal: fetched.thread.numComments,
         truncated: selection.truncated,
@@ -108,10 +109,11 @@ class DirectTldrApi implements TldrApi {
   }) async {
     if (analysis.language == targetLanguage) return TranslationResult(analysis);
     final started = _clock();
-    final texts = await _generate(
+    final (texts, _) = await _generate(
       provider: provider,
       started: started,
       dioToken: CancelToken(),
+      fallbackModel: await _fallbackModel(provider),
       request: LlmRequest(
         model: await _resolveModel(provider, model),
         apiKey: apiKey.trim(),
@@ -146,62 +148,72 @@ class DirectTldrApi implements TldrApi {
     return TranslationResult(texts);
   }
 
-  /// One call, plus one retry with the validation error if ≥ 25 s remain
-  /// (eng review R1).
-  Future<T> _generate<T>({
+  /// One call to the request's model, plus at most:
+  /// - one call to [fallbackModel] if that model is overloaded (5xx) or does
+  ///   not answer in time; the first call leaves it 25 s when it can;
+  /// - one retry with the validation error if the output does not validate.
+  /// Each extra call needs ≥ 25 s left (eng review R1). Returns the result and
+  /// the model that produced it.
+  Future<(T, String)> _generate<T>({
     required ProviderId provider,
     required DateTime started,
     required CancelToken dioToken,
     required LlmRequest request,
+    required String? fallbackModel,
     required T Function(Map<String, dynamic>) parse,
   }) async {
     final client = _llmFor(provider);
     var current = request;
-    for (var attempt = 0; attempt < 2; attempt++) {
+    var fellBack = fallbackModel == null || fallbackModel == request.model;
+    var corrected = false;
+    while (true) {
       final remaining = _remaining(started);
       if (remaining <= Duration.zero) throw ApiError.timeout;
-      final timed = LlmRequest(
-        model: current.model,
-        apiKey: current.apiKey,
-        system: current.system,
-        user: current.user,
-        schema: current.schema,
-        geminiSchema: current.geminiSchema,
-        toolName: current.toolName,
-        timeout: remaining < current.timeout ? remaining : current.timeout,
-      );
+      if (dioToken.isCancelled) throw ApiError.cancelled;
+      var budget = !fellBack && remaining - _minTimeForRetry >= _minTimeForRetry
+          ? remaining - _minTimeForRetry
+          : remaining;
+      if (current.timeout < budget) budget = current.timeout;
+      // Its own token: giving up on this call must not cancel the next one.
+      final callToken = CancelToken();
+      dioToken.whenCancel.then((_) => callToken.cancel());
       try {
         final raw = await client
-            .generateJson(timed, cancelToken: dioToken)
-            .timeout(remaining, onTimeout: () {
-          dioToken.cancel();
+            .generateJson(current.copyWith(timeout: budget), cancelToken: callToken)
+            .timeout(budget, onTimeout: () {
+          callToken.cancel();
           throw ApiError.timeout;
         });
-        return parse(raw);
+        return (parse(raw), current.model);
+      } on ApiError catch (e) {
+        final overloaded = e.code == 'LLM_UNAVAILABLE' || e.code == 'TIMEOUT';
+        if (!overloaded ||
+            fellBack ||
+            dioToken.isCancelled ||
+            _remaining(started) < _minTimeForRetry) {
+          rethrow;
+        }
+        fellBack = true;
+        current = current.copyWith(model: fallbackModel);
       } on FormatException catch (e) {
-        if (attempt == 1 || _remaining(started) < _minTimeForRetry) {
+        if (corrected || _remaining(started) < _minTimeForRetry) {
           throw const ApiError(
               code: 'LLM_OUTPUT_INVALID',
               message: 'Model output did not match the schema',
               retryable: true);
         }
-        current = LlmRequest(
-          model: request.model,
-          apiKey: request.apiKey,
-          system: request.system,
-          user: '${request.user}\n\nYour previous answer was invalid: ${e.message}. '
-              'Return a corrected JSON object.',
-          schema: request.schema,
-          geminiSchema: request.geminiSchema,
-          toolName: request.toolName,
-        );
+        corrected = true;
+        current = current.copyWith(
+            user: '${request.user}\n\nYour previous answer was invalid: ${e.message}. '
+                'Return a corrected JSON object.');
       }
     }
-    throw const ApiError(
-        code: 'LLM_OUTPUT_INVALID', message: 'Unreachable', retryable: true);
   }
 
   Duration _remaining(DateTime started) => deadline - _clock().difference(started);
+
+  Future<String?> _fallbackModel(ProviderId provider) async =>
+      (await _catalog()).provider(provider).fallbackModel;
 
   Future<String> _resolveModel(ProviderId provider, String? model) async {
     final entry = (await _catalog()).provider(provider);

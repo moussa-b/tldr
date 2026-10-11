@@ -56,7 +56,7 @@ fvm flutter test
 
 | Élément | État |
 |---|---|
-| Moteur sur l'appareil (Reddit, sélection R9, prompts, Gemini / OpenAI / Anthropic en REST, deadline 90 s + retry R1) | ✅ Codé et testé unitairement, lancé avec une vraie clé sur émulateur Android le 2026-10-10. |
+| Moteur sur l'appareil (Reddit, sélection R9, prompts, Gemini / OpenAI / Anthropic en REST, deadline 90 s + retry R1, modèle de secours Gemini 3.5 Flash si le modèle choisi est surchargé) | ✅ Codé et testé unitairement, lancé avec une vraie clé sur émulateur Android le 2026-10-10. |
 | Lecture de Reddit par WebView + transition « poussière » | ✅ Vérifiée sur simulateur iOS et émulateur Android le 2026-10-10. |
 | Écrans Accueil, Résumé, Réglages, Setup, exemple, erreurs, traduction, régénération, doublons, reprise | ✅ |
 | Historique SQLite, clés sécurisées, catalogue embarqué (`assets/catalog.json`) | ✅ |
@@ -64,5 +64,5 @@ fvm flutter test
 | Partage iOS (Share Extension liée au paquet SPM `receive-sharing-intent`, App Group `group.com.bdzapps.tldr`, cycle de vie UIScene) | ✅ L'app compile pour le simulateur, extension embarquée. Sur iPhone réel : choisir ton équipe de signature et activer l'App Group dans Xcode sur les deux cibles. `receive_sharing_intent` est épinglé en 1.9.0 parce que l'extension le référence par son chemin versionné : en cas de montée de version, mettre à jour ce chemin dans le projet Xcode. |
 | Polices IBM Plex Sans + Literata | ✅ Embarquées dans l'app (`assets/fonts/`, licence OFL), rien n'est téléchargé. |
 | Identifiants de modèles (`assets/catalog.json`) | Gemini vérifié le 2026-10-11 (`gemini-2.5-*` n'est plus ouvert aux nouveaux comptes). ⚠️ Anthropic et OpenAI à vérifier. |
-| Tests | 71 tests : unitaires, moteur, widgets, accessibilité, texte à 200 %, transition poussière, et un vrai résumé Gemini (`test/live/`, clés dans `gemini.keys`, ignoré sans ce fichier) |
+| Tests | 75 tests : unitaires, moteur, widgets, accessibilité, texte à 200 %, transition poussière, et un vrai résumé Gemini (`test/live/`, clés dans `gemini.keys`, ignoré sans ce fichier) |
 | Vrai résumé sur appareil | `tool/live_summary.sh <device>` lit un thread par la WebView et le résume avec Gemini. Vérifié sur simulateur iOS le 2026-10-11. |

@@ -192,6 +192,7 @@ class CatalogProvider {
     required this.keyHelpUrl,
     required this.keyPattern,
     required this.models,
+    this.fallbackModel,
   });
 
   final ProviderId id;
@@ -199,6 +200,9 @@ class CatalogProvider {
   final String keyHelpUrl;
   final String keyPattern;
   final List<CatalogModel> models;
+
+  /// Model tried once when the chosen one is overloaded or does not answer.
+  final String? fallbackModel;
 
   CatalogModel get defaultModel =>
       models.firstWhere((m) => m.isDefault, orElse: () => models.first);
@@ -213,6 +217,7 @@ class CatalogProvider {
         models: (json['models'] as List)
             .map((m) => CatalogModel.fromJson(m as Map<String, dynamic>))
             .toList(),
+        fallbackModel: json['fallbackModel'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -221,6 +226,7 @@ class CatalogProvider {
         'keyHelpUrl': keyHelpUrl,
         'keyPattern': keyPattern,
         'models': models.map((m) => m.toJson()).toList(),
+        if (fallbackModel != null) 'fallbackModel': fallbackModel,
       };
 }
 
