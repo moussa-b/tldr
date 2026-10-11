@@ -43,7 +43,12 @@ void main() {
       } on ApiError catch (e) {
         // A second key covers a used-up quota or a key Gemini serves badly.
         const keyProblems = {'LLM_QUOTA_EXCEEDED', 'LLM_UNAVAILABLE', 'TIMEOUT'};
-        if (!keyProblems.contains(e.code) || key == keys.last) rethrow;
+        if (!keyProblems.contains(e.code)) rethrow;
+        if (key == keys.last) {
+          // Every key used up its free quota: says nothing about the app.
+          if (e.code == 'LLM_QUOTA_EXCEEDED') return markTestSkipped('Gemini quota used up on every key');
+          rethrow;
+        }
       }
     }
 
