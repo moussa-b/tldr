@@ -35,7 +35,7 @@ Key routing rules:
 Flutter is pinned with FVM (`.fvmrc`), so prefix commands with `fvm`. Tests live in `test/`.
 
 - Run: `fvm flutter analyze && fvm flutter test`
-- `test/live/` summarizes a real Reddit thread with the real Gemini API, using the keys in `gemini.keys` (repo root, one per line, git-ignored: never commit, print or paste them). It is skipped when the file is missing.
+- `test/live/` summarizes a real Reddit thread (captured once through the WebView, in `test/fixtures/reddit_thread_founder.json`) with the real Gemini API, using the keys in `gemini.keys` (repo root, one per line, git-ignored: never commit, print or paste them). It is skipped when the file is missing.
 - Every ship (merging a feature into `develop`, or a release) needs a real summary on both platforms first, and the result reported to the user:
   - iOS simulator: `tool/live_summary.sh <simulator-id>` (`xcrun simctl list devices booted`).
   - Android emulator: start it with `~/Library/Android/sdk/emulator/emulator -avd Pixel_9_Pro &` (the user's `androidemulator` alias), then `tool/live_summary.sh emulator-5554`.

@@ -17,7 +17,7 @@ Référence fonctionnelle — RedditAI `src/reddit_ai.py` / `src/schema.py` :
 |---|---|
 | Fetch post + commentaires via PRAW | ✅ autrement (voir « Lecture de Reddit ») |
 | `replace_more(75)`, aucun plafond de taille du prompt | ❌ remplacé par budget 200 commentaires / 60 000 caractères |
-| Gemini `gemini-3.8-flash`, `temperature=0.2`, `thinkingLevel: low`, JSON via `response_schema` | ✅ + Anthropic + OpenAI |
+| Gemini `gemini-3.8-flash`, `temperature=0.2`, `thinkingLevel: low`, JSON via `responseSchema` | ✅ + Anthropic + OpenAI |
 | Sortie : `short_summary`, `detailed_viewpoint_summary`, `sentiment_analysis`, `emotion_detection` (15 labels), `toxicity_detection` (0..1), `ai_take` | ✅ mêmes champs (camelCase) + `language` |
 | Webhook Discord, formulaire feedback | ❌ hors périmètre |
 | Historique | ✅ local SQLite |
@@ -171,7 +171,7 @@ Prompts dans `lib/data/engine/prompts.dart` :
   ```
   (`<` et `>` échappés dans le contenu).
 - Appels REST via dio, sans SDK, max 8 192 tokens de sortie, `temperature: 0.2` (sauf OpenAI : les modèles GPT-5 n'acceptent que la température par défaut) :
-  - Gemini : `generateContent` avec `responseMimeType: application/json` + `responseSchema`.
+  - Gemini : `generateContent` avec `responseMimeType: application/json` + `responseSchema`, et `thinkingConfig.thinkingLevel: low` (la réflexion par défaut de Gemini 3 dépasse la deadline de 90 s).
   - OpenAI : `chat/completions` avec `response_format: { type: "json_schema", strict: true }`.
   - Anthropic : `messages` avec un outil `submit_analysis` forcé (`tool_choice`).
 - Mapping : 401/403 → `LLM_KEY_INVALID`, 404 modèle → `LLM_MODEL_UNAVAILABLE`, 429 → `LLM_QUOTA_EXCEEDED` (`Retry-After` lu si présent), 5xx/réseau → `LLM_UNAVAILABLE`.
@@ -236,7 +236,8 @@ lib/
   features/
     home/ settings/ setup/ share/ summary/ (summary_screen.dart, summary_widgets.dart, dust_veil.dart)
 assets/           catalog.json, demo/summary_fr.json, icon/, fonts/ (IBM Plex Sans et Literata embarquées, licence OFL)
-test/             fake_tldr_api.dart, fixtures/, core/, data/, widget/
+test/             fake_tldr_api.dart, fixtures/, core/, data/, widget/, live/ (vrai résumé Gemini, clés dans gemini.keys)
+tool/             live_summary.sh + live_summary/ (vrai résumé sur appareil : WebView + Gemini)
 ios/ShareExtension/
 ```
 
@@ -532,8 +533,8 @@ Horizons : 5 s = le TL;DR lisible sans scroller ; 5 min = partage → résumé s
 
 - Deux familles **embarquées** en assets (`assets/fonts/`, déclarées dans `pubspec.yaml` sous `flutter: fonts:`, licences OFL dans `assets/fonts/OFL-*.txt`, enregistrées dans `LicenseRegistry`) ; aucun téléchargement à l'exécution, pas de dépendance `google_fonts`.
   - **IBM Plex Sans** (400, 500, 600) : toute l'interface (AppBar, boutons, métadonnées, labels, champs). `ThemeData.textTheme` en Plex Sans.
-  - **Literata** (400) : uniquement les textes du résumé (`shortSummary`, `detailedSummary`, `aiTake`) via un style dédié `readingBody`.
-- Wordmark « TL;DR+ » : Plex Sans SemiBold 22 sp, interlettrage -0,2, couleur `onSurface`, le « + » en `primary`.
+  - **Literata** (400) : uniquement les textes du résumé (`shortSummary`, `detailedSummary`, `aiTake`) via trois styles dédiés : `readingLead` (résumé court), `readingBody` (résumé détaillé), `readingOpinion` (avis de l'IA).
+- Wordmark « TL;DR+ » : Plex Sans SemiBold 20 sp, interlettrage -0,2, couleur `onSurface`, le « + » en `primary`.
 
 #### D-14 Surfaces plates (approuvé D16)
 
