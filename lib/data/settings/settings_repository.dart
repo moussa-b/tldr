@@ -1,21 +1,19 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:sqflite/sqflite.dart';
 
 import '../models/models.dart';
 
-/// A summary request started but not finished (eng review R2).
+/// A summary request started but not finished, replayed when the app comes
+/// back (eng review R2, spec D-20).
 class PendingSummary {
   const PendingSummary({
-    required this.idempotencyKey,
     required this.url,
     required this.provider,
     required this.model,
     required this.startedAt,
   });
 
-  final String idempotencyKey;
   final String url;
   final ProviderId provider;
   final String? model;
@@ -26,7 +24,6 @@ class PendingSummary {
   bool isFresh(DateTime now) => now.difference(startedAt) < maxAge;
 
   Map<String, dynamic> toJson() => {
-        'idempotencyKey': idempotencyKey,
         'url': url,
         'provider': provider.name,
         'model': model,
@@ -34,7 +31,6 @@ class PendingSummary {
       };
 
   factory PendingSummary.fromJson(Map<String, dynamic> json) => PendingSummary(
-        idempotencyKey: json['idempotencyKey'] as String,
         url: json['url'] as String,
         provider: ProviderId.fromJson(json['provider'] as String),
         model: json['model'] as String?,
@@ -52,23 +48,6 @@ class SettingsRepository {
   static const _catalog = 'catalogJson';
   static const _pending = 'pendingSummary';
   static String _modelKey(ProviderId p) => 'model.${p.name}';
-
-  static const _deviceId = 'redditDeviceId';
-  String _deviceIdCache = '';
-
-  /// Random per-install id required by Reddit's installed-app OAuth.
-  /// Loaded by [init] at startup.
-  String get deviceIdSync => _deviceIdCache;
-
-  Future<void> init() async {
-    var id = await _get(_deviceId);
-    if (id == null) {
-      final random = Random.secure();
-      id = List.generate(24, (_) => random.nextInt(36).toRadixString(36)).join();
-      await _set(_deviceId, id);
-    }
-    _deviceIdCache = id;
-  }
 
   Future<String?> _get(String key) async {
     final rows = await _db.query('settings', where: 'key = ?', whereArgs: [key]);

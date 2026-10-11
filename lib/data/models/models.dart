@@ -1,5 +1,5 @@
-// Hand-written immutable models mirroring docs/api/openapi.yaml (eng review D2:
-// no freezed/json_serializable). Field names follow the JSON contract.
+// Hand-written immutable models (eng review D2: no freezed/json_serializable).
+// Their JSON shape is what the history table stores and the demo summary uses.
 
 enum ProviderId {
   gemini,
@@ -109,7 +109,7 @@ class Analysis {
       shortSummary: json['shortSummary'] as String,
       detailedSummary: json['detailedSummary'] as String,
       sentiment: Sentiment.fromJson(json['sentiment'] as String),
-      // Contract: never empty; fall back to neutral if a server misbehaves.
+      // Never empty: fall back to neutral if the model returns no emotion.
       emotions: emotions.isEmpty ? const ['neutral'] : emotions,
       toxicity: (json['toxicity'] as num?)?.toDouble(),
       aiTake: json['aiTake'] as String,
@@ -192,6 +192,7 @@ class CatalogProvider {
     required this.keyHelpUrl,
     required this.keyPattern,
     required this.models,
+    this.fallbackModel,
   });
 
   final ProviderId id;
@@ -199,6 +200,9 @@ class CatalogProvider {
   final String keyHelpUrl;
   final String keyPattern;
   final List<CatalogModel> models;
+
+  /// Model tried once when the chosen one is overloaded or does not answer.
+  final String? fallbackModel;
 
   CatalogModel get defaultModel =>
       models.firstWhere((m) => m.isDefault, orElse: () => models.first);
@@ -213,6 +217,7 @@ class CatalogProvider {
         models: (json['models'] as List)
             .map((m) => CatalogModel.fromJson(m as Map<String, dynamic>))
             .toList(),
+        fallbackModel: json['fallbackModel'] as String?,
       );
 
   Map<String, dynamic> toJson() => {
@@ -221,6 +226,7 @@ class CatalogProvider {
         'keyHelpUrl': keyHelpUrl,
         'keyPattern': keyPattern,
         'models': models.map((m) => m.toJson()).toList(),
+        if (fallbackModel != null) 'fallbackModel': fallbackModel,
       };
 }
 

@@ -1,6 +1,6 @@
-/// Client-side Reddit link helpers. The backend re-validates and resolves short
-/// links (spec « Normalisation des URL »); the app only needs to find a link in
-/// shared text and recognise a post id for deduplication (spec D-10).
+/// Reddit link helpers: find a link in shared text, recognise a post id for
+/// deduplication (spec D-10). Short `/s/` links are resolved by the Reddit
+/// client (spec « Normalisation des URL »).
 library;
 
 const _redditHosts = {
@@ -34,7 +34,7 @@ String? extractRedditUrl(String text) {
 bool isRedditUrl(String text) => extractRedditUrl(text) != null;
 
 /// Post id for `/comments/<id>` and `redd.it/<id>` links, null otherwise
-/// (short `/s/` links need the backend to resolve them).
+/// (short `/s/` links are resolved when the thread is fetched).
 String? extractPostId(String url) {
   final uri = Uri.tryParse(url.trim());
   if (uri == null || !_redditHosts.contains(uri.host.toLowerCase())) return null;
@@ -47,6 +47,12 @@ String? extractPostId(String url) {
   }
   final match = _commentsPath.firstMatch(uri.path);
   return match?.group(1)?.toLowerCase();
+}
+
+/// `/r/<sub>/s/<code>` share links, which redirect to a post.
+bool isShortLink(String url) {
+  final segments = Uri.tryParse(url.trim())?.pathSegments ?? const [];
+  return segments.length >= 4 && segments[0] == 'r' && segments[2] == 's';
 }
 
 /// Subreddit name from the URL path, used by the loading screen (spec D-6).

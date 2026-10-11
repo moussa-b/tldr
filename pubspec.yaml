@@ -44,10 +44,10 @@ dependencies:
   url_launcher: ^6.3.2
   intl: ^0.20.2
   uuid: ^4.6.0
-  google_fonts: ^9.0.0
   path_provider: ^2.1.5
   sqflite: ^2.4.2
   path: ^1.9.1
+  webview_flutter: ^4.14.1
 
 dev_dependencies:
   flutter_test:
@@ -59,7 +59,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
-  mocktail: ^1.0.5
   sqflite_common_ffi: ^2.3.6
   flutter_launcher_icons: ^0.14.4
 
@@ -76,11 +75,23 @@ flutter:
 
   assets:
     - assets/catalog.json
-    - assets/fixtures/api/
-    - assets/fixtures/api/errors/
-    # Drop the IBM Plex Sans / Literata .ttf files here to bundle them
-    # (google_fonts uses bundled files first, see tool/fetch_fonts.sh).
-    - assets/google_fonts/
+    - assets/demo/
+    # SIL Open Font License texts, shown in the app's licenses page.
+    - assets/fonts/OFL-IBMPlexSans.txt
+    - assets/fonts/OFL-Literata.txt
+
+  # Bundled so the app never downloads fonts (DESIGN.md « Typography »).
+  fonts:
+    - family: IBM Plex Sans
+      fonts:
+        - asset: assets/fonts/IBMPlexSans-Regular.ttf
+        - asset: assets/fonts/IBMPlexSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSans-SemiBold.ttf
+          weight: 600
+    - family: Literata
+      fonts:
+        - asset: assets/fonts/Literata-Regular.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -297,7 +297,7 @@ class _SummaryErrorViewState extends State<SummaryErrorView> {
     final copy = errorCopy(error, providerLabel: widget.providerLabel);
     final icon = switch (error.code) {
       'NETWORK_ERROR' => Icons.wifi_off_outlined,
-      'RATE_LIMITED' || 'LLM_QUOTA_EXCEEDED' || 'TIMEOUT' => Icons.hourglass_empty,
+      'LLM_QUOTA_EXCEEDED' || 'TIMEOUT' => Icons.hourglass_empty,
       'LLM_KEY_INVALID' || 'LLM_KEY_MISSING' => Icons.key_off_outlined,
       _ => Icons.error_outline,
     };

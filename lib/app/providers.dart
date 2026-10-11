@@ -2,17 +2,16 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/api/mock/mock_tldr_api.dart';
 import '../data/api/tldr_api.dart';
 import '../data/db/app_database.dart';
 import '../data/db/summaries_dao.dart';
 import '../data/engine/direct_tldr_api.dart';
-import '../data/engine/reddit_client.dart';
+import '../data/engine/reddit_page.dart';
+import '../data/engine/webview_reddit_client.dart';
 import '../data/secure/key_store.dart';
 import '../data/settings/settings_repository.dart';
 import '../data/models/models.dart';
 import '../data/summary_service.dart';
-import 'config.dart';
 
 /// Overridden in main() (and tests) with an opened database.
 final databaseProvider = Provider<AppDatabase>(
@@ -20,20 +19,18 @@ final databaseProvider = Provider<AppDatabase>(
 
 final keyStoreProvider = Provider<KeyStore>((ref) => SecureKeyStore());
 
-/// Swap point for a future backend: return a `BackendTldrApi` here.
+/// Reads Reddit and calls the user's AI provider, all on the device.
 final apiProvider = Provider<TldrApi>((ref) {
-  if (AppConfig.isMock) return MockTldrApi();
-  final settings = ref.watch(settingsProvider);
   return DirectTldrApi(
-    reddit: LiveRedditClient(
-      clientId: AppConfig.redditClientId,
-      userAgent: AppConfig.redditUserAgent,
-      deviceId: () => settings.deviceIdSync,
-    ),
+    reddit: WebViewRedditClient(host: ref.watch(redditPageHostProvider)),
     catalog: () async => ProviderCatalog.fromJson(
         jsonDecode(await bundledCatalog()) as Map<String, dynamic>),
   );
 });
+
+/// Lets the Summary screen show the Reddit page the thread is read from.
+/// Widget tests override it with null: no WebView, a skeleton instead.
+final redditPageHostProvider = Provider<RedditPageHost?>((ref) => RedditPageHost());
 
 final summariesDaoProvider =
     Provider<SummariesDao>((ref) => SummariesDao(ref.watch(databaseProvider).db));

@@ -26,6 +26,17 @@ class LlmRequest {
   final Map<String, dynamic> geminiSchema;
   final String toolName;
   final Duration timeout;
+
+  LlmRequest copyWith({String? model, String? user, Duration? timeout}) => LlmRequest(
+        model: model ?? this.model,
+        apiKey: apiKey,
+        system: system,
+        user: user ?? this.user,
+        schema: schema,
+        geminiSchema: geminiSchema,
+        toolName: toolName,
+        timeout: timeout ?? this.timeout,
+      );
 }
 
 /// Calls an LLM provider directly over REST (no SDK).
@@ -171,6 +182,8 @@ class GeminiClient extends _RestLlmClient {
           'maxOutputTokens': 8192,
           'responseMimeType': 'application/json',
           'responseSchema': r.geminiSchema,
+          // Gemini 3 thinks at length by default and blows the 90 s deadline.
+          'thinkingConfig': {'thinkingLevel': 'low'},
         },
       },
       {'x-goog-api-key': r.apiKey},
