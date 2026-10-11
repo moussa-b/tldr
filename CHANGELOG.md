@@ -2,7 +2,7 @@
 
 Toutes les versions notables de TL;DR+. La version de l'app (`pubspec.yaml`) suit les trois premiers chiffres de `VERSION`.
 
-## [1.0.0.0] - 2026-10-09
+## [1.0.0.0] - 2026-10-11
 
 Première version publique de TL;DR+, sur Android et iOS.
 
