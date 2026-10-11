@@ -64,7 +64,13 @@ String relativeDate(DateTime date, {DateTime? now}) {
   if (local.year == yesterday.year && local.month == yesterday.month && local.day == yesterday.day) {
     return 'hier';
   }
-  if (diff.inDays < 7) return 'il y a ${diff.inDays.clamp(1, 6)} jours';
+  // Calendar days: two days back is « 2 jours » even when under 48 h ago.
+  final days = (DateTime(current.year, current.month, current.day)
+                  .difference(DateTime(local.year, local.month, local.day))
+                  .inHours /
+              24)
+          .round();
+  if (days < 7) return 'il y a ${days.clamp(2, 6)} jours';
   final sameYear = local.year == current.year;
   return DateFormat(sameYear ? 'd MMM' : 'd MMM y', 'fr_FR').format(local);
 }
