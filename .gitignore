@@ -57,3 +57,6 @@ app.*.map.json
 .fvm/
 # Gradle reports written under android/ by AGP 9
 /android/build/
+
+# Gemini keys
+gemini.keys
