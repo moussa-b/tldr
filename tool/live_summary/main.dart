@@ -4,9 +4,9 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:tldr/core/errors.dart';
-import 'package:dio/dio.dart';
 import 'package:tldr/data/engine/direct_tldr_api.dart';
 import 'package:tldr/data/engine/reddit_client.dart';
 import 'package:tldr/data/engine/reddit_page.dart';

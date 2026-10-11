@@ -15,4 +15,4 @@ Première version publique de TL;DR+, sur Android et iOS.
 - Traduction du résumé en français, et régénération avec le fournisseur et le modèle choisis dans les réglages.
 - Un exemple de résumé à consulter sans clé ni réseau pour découvrir l'app.
 - Messages d'erreur clairs (thread supprimé ou privé, clé refusée, quota épuisé, Reddit indisponible) avec l'action qui débloque.
-- Design « Céladon » (Plex Sans, Literata), lisible jusqu'à 200 % de taille de texte, et une icône d'app dédiée sur iOS et Android.
+- Design « Céladon » (Plex Sans, Literata, polices embarquées dans l'app : rien n'est téléchargé au premier lancement), lisible jusqu'à 200 % de taille de texte, et une icône d'app dédiée sur iOS et Android.

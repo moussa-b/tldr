@@ -4,7 +4,8 @@
 #   tool/live_summary.sh <device-id> [extra flutter run args]
 #
 # Keys come from gemini.keys at the repo root (one per line, git-ignored).
-# Prints the LIVE_* lines and exits 0 on LIVE_OK, 1 otherwise.
+# Prints the LIVE_* lines and exits 0 on LIVE_OK, 1 otherwise. The tool runs as
+# the app (same id), so the real app is reinstalled at the end.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -34,6 +35,13 @@ done
 
 kill "$pid" 2>/dev/null || true
 wait "$pid" 2>/dev/null || true
+
 grep -o 'LIVE_[A-Z]*.*' "$log" || echo "LIVE_FAIL no result (log: $log)"
+
+# The tool replaced the app on the device, with the keys in its build: put
+# the real app back.
+echo "LIVE_RESTORE reinstalling the app on $device"
+fvm flutter run -d "$device" --no-resident >/dev/null 2>&1 </dev/null ||
+  echo "LIVE_RESTORE failed: run fvm flutter run -d $device"
 [[ $status == 0 ]] && rm -f "$log"
 exit $status

@@ -17,7 +17,7 @@ Référence fonctionnelle — RedditAI `src/reddit_ai.py` / `src/schema.py` :
 |---|---|
 | Fetch post + commentaires via PRAW | ✅ autrement (voir « Lecture de Reddit ») |
 | `replace_more(75)`, aucun plafond de taille du prompt | ❌ remplacé par budget 200 commentaires / 60 000 caractères |
-| Gemini `gemini-3.8-flash`, `temperature=0.2`, JSON via `response_schema` | ✅ + Anthropic + OpenAI |
+| Gemini `gemini-3.8-flash`, `temperature=0.2`, `thinkingLevel: low`, JSON via `response_schema` | ✅ + Anthropic + OpenAI |
 | Sortie : `short_summary`, `detailed_viewpoint_summary`, `sentiment_analysis`, `emotion_detection` (15 labels), `toxicity_detection` (0..1), `ai_take` | ✅ mêmes champs (camelCase) + `language` |
 | Webhook Discord, formulaire feedback | ❌ hors périmètre |
 | Historique | ✅ local SQLite |
@@ -530,9 +530,9 @@ Horizons : 5 s = le TL;DR lisible sans scroller ; 5 min = partage → résumé s
 
 #### D-13 Typographie (approuvé D15)
 
-- Deux familles **embarquées** en assets (`assets/fonts/`, déclarées dans `pubspec.yaml` sous `flutter: fonts:`, licences OFL copiées dans `assets/fonts/LICENSES/`) ; aucun téléchargement à l'exécution.
+- Deux familles **embarquées** en assets (`assets/fonts/`, déclarées dans `pubspec.yaml` sous `flutter: fonts:`, licences OFL dans `assets/fonts/OFL-*.txt`, enregistrées dans `LicenseRegistry`) ; aucun téléchargement à l'exécution, pas de dépendance `google_fonts`.
   - **IBM Plex Sans** (400, 500, 600) : toute l'interface (AppBar, boutons, métadonnées, labels, champs). `ThemeData.textTheme` en Plex Sans.
-  - **Literata** (400, 400 italique, 600) : uniquement les textes du résumé (`shortSummary`, `detailedSummary`, `aiTake`) via un style dédié `readingBody`.
+  - **Literata** (400) : uniquement les textes du résumé (`shortSummary`, `detailedSummary`, `aiTake`) via un style dédié `readingBody`.
 - Wordmark « TL;DR+ » : Plex Sans SemiBold 22 sp, interlettrage -0,2, couleur `onSurface`, le « + » en `primary`.
 
 #### D-14 Surfaces plates (approuvé D16)

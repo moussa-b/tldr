@@ -33,7 +33,7 @@ Le projet est épinglé sur **Flutter 3.47.5 via FVM** (`.fvmrc`) : préfixe les
 fvm flutter run
 ```
 
-Au premier lancement, l'app demande une clé IA (Gemini a une offre gratuite : https://aistudio.google.com/apikey).
+Au premier lancement, l'app demande une clé IA (Gemini a une offre gratuite : https://aistudio.google.com/apikey ; au 2026-10-11 elle permet 20 résumés par jour avec Gemini 3.8 Flash).
 
 ### Sur ton téléphone Android branché en USB (Huawei ANE-LX1)
 
