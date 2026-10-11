@@ -139,6 +139,16 @@ void main() {
       expect(r.meta.model, 'gemini-3.5-flash');
     });
 
+    test('a used-up quota hands over to the fallback, which has its own quota', () async {
+      const quota = ApiError(
+          code: 'LLM_QUOTA_EXCEEDED', message: 'Quota', retryable: true, retryAfterSeconds: 60);
+      final llm = ScriptedLlm([quota, Map<String, dynamic>.from(_valid)]);
+      final r = await engine(llm).summarize(
+          url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k');
+      expect(llm.requests.map((q) => q.model), ['gemini-3.8-flash', 'gemini-3.5-flash']);
+      expect(r.meta.model, 'gemini-3.5-flash');
+    });
+
     test('a model that does not answer leaves 25 s to the fallback', () async {
       final llm = ScriptedLlm([ApiError.timeout, Map<String, dynamic>.from(_valid)]);
       final r = await engine(llm).summarize(

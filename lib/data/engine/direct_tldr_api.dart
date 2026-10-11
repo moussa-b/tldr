@@ -149,8 +149,9 @@ class DirectTldrApi implements TldrApi {
   }
 
   /// One call to the request's model, plus at most:
-  /// - one call to [fallbackModel] if that model is overloaded (5xx) or does
-  ///   not answer in time; the first call leaves it 25 s when it can;
+  /// - one call to [fallbackModel] if that model is overloaded (5xx), out of
+  ///   quota or does not answer in time; the first call leaves it 25 s when it
+  ///   can;
   /// - one retry with the validation error if the output does not validate.
   /// Each extra call needs ≥ 25 s left (eng review R1). Returns the result and
   /// the model that produced it.
@@ -186,8 +187,9 @@ class DirectTldrApi implements TldrApi {
         });
         return (parse(raw), current.model);
       } on ApiError catch (e) {
-        final overloaded = e.code == 'LLM_UNAVAILABLE' || e.code == 'TIMEOUT';
-        if (!overloaded ||
+        // A free-tier quota is counted per model: the fallback has its own.
+        const handOver = {'LLM_UNAVAILABLE', 'TIMEOUT', 'LLM_QUOTA_EXCEEDED'};
+        if (!handOver.contains(e.code) ||
             fellBack ||
             dioToken.isCancelled ||
             _remaining(started) < _minTimeForRetry) {

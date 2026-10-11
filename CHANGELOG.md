@@ -14,6 +14,6 @@ Première version publique de TL;DR+, sur Android et iOS.
 - Historique local des résumés, avec suppression annulable, partage, et détection d'un thread déjà résumé.
 - Traduction du résumé en français, et régénération avec le fournisseur et le modèle choisis dans les réglages.
 - Un exemple de résumé à consulter sans clé ni réseau pour découvrir l'app.
-- Quand Gemini est surchargé ou ne répond pas, le résumé est refait une fois avec Gemini 3.5 Flash au lieu d'échouer au bout de 90 s ; le résumé indique le modèle utilisé.
+- Quand Gemini est surchargé, ne répond pas ou n'a plus de quota, le résumé est refait une fois avec Gemini 3.5 Flash au lieu d'échouer ; le résumé indique le modèle utilisé. Avec l'offre gratuite, ça double le nombre de résumés par jour.
 - Messages d'erreur clairs (thread supprimé ou privé, clé refusée, quota épuisé, Reddit indisponible) avec l'action qui débloque.
 - Design « Céladon » (Plex Sans, Literata, polices embarquées dans l'app : rien n'est téléchargé au premier lancement), lisible jusqu'à 200 % de taille de texte, et une icône d'app dédiée sur iOS et Android.
