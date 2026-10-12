@@ -83,6 +83,7 @@ class _KeyFormState extends ConsumerState<KeyForm> {
     final result =
         await ref.read(summaryServiceProvider).saveKey(widget.provider, _controller.text);
     if (!mounted) return;
+    ref.read(keyRevisionProvider.notifier).bump();
     setState(() {
       _saving = false;
       _result = result;
@@ -107,6 +108,7 @@ class _KeyFormState extends ConsumerState<KeyForm> {
     if (ok != true) return;
     await ref.read(keyStoreProvider).delete(widget.provider);
     if (!mounted) return;
+    ref.read(keyRevisionProvider.notifier).bump();
     setState(() {
       _controller.clear();
       _hasStoredKey = false;

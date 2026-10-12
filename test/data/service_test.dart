@@ -87,6 +87,15 @@ void main() {
     );
   });
 
+  test('a model missing from the catalog still gets a readable name', () async {
+    // The Gemini fallback model is not in the catalog's model list.
+    final deps = await testDeps();
+    expect(await deps.service.modelName(ProviderId.gemini, 'gemini-3.8-flash'), 'Gemini 3.8 Flash');
+    expect(await deps.service.modelName(ProviderId.gemini, 'gemini-3.5-flash'), 'Gemini 3.5 Flash');
+    expect(await deps.service.modelName(ProviderId.openai, 'gpt-5-mini'), 'GPT-5 mini');
+    expect(await deps.service.modelName(ProviderId.gemini, 'gemini-pro-latest'), 'Gemini Pro (dernière version)');
+  });
+
   test('a stored model missing from the catalog falls back to the default (R4)', () async {
     final deps = await testDeps();
     await deps.settings.setModel(ProviderId.gemini, 'gemini-1.0-retired');

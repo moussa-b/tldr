@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<!-- One store visual: a tagline over an app screenshot, in the Céladon
+     palette (DESIGN.md). Rendered by store/render.sh with headless Chrome;
+     the query string gives the size, the texts and the screenshot. -->
+<style>
+  @font-face { font-family: Plex; src: url(../assets/fonts/IBMPlexSans-SemiBold.ttf); font-weight: 600; }
+  @font-face { font-family: Plex; src: url(../assets/fonts/IBMPlexSans-Regular.ttf); font-weight: 400; }
+  @font-face { font-family: Literata; src: url(../assets/fonts/Literata-Regular.ttf); }
+  :root {
+    --primary: #2F5D57;
+    --on-primary: #FFFFFF;
+    --primary-light: #9CCFC6;
+    --accent: #FF4500;
+  }
+  * { margin: 0; box-sizing: border-box; }
+  html, body { width: var(--w); height: var(--h); overflow: hidden; background: var(--primary); }
+  html:has(body.banner) { background: #EEF1EC; }
+  body {
+    display: flex; flex-direction: column; align-items: center;
+    padding: calc(var(--u) * 4) calc(var(--u) * 6) 0;
+    color: var(--on-primary);
+  }
+  /* Same height on every slide, so the phones line up across the set. */
+  .head { height: calc(var(--u) * 30); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  h1, p { text-wrap: balance; }
+  h1 {
+    font: 600 calc(var(--u) * 7.2)/1.12 Plex, sans-serif;
+    letter-spacing: -0.01em; text-align: center; max-width: 92%;
+  }
+  h1 .plus { color: var(--accent); }
+  p {
+    margin-top: calc(var(--u) * 2.4);
+    font: calc(var(--u) * 3.6)/1.35 Literata, serif;
+    color: var(--primary-light); text-align: center; max-width: 88%;
+  }
+  .shot {
+    margin-top: calc(var(--u) * 3);
+    width: var(--shot-w);
+    flex: 1; overflow: hidden;
+    border-radius: calc(var(--u) * 4.5) calc(var(--u) * 4.5) 0 0;
+    border: calc(var(--u) * 1.1) solid #10201D; border-bottom: 0;
+    box-shadow: 0 calc(var(--u) * 3) calc(var(--u) * 10) rgba(0, 0, 0, .35);
+    background: #EEF1EC;
+  }
+  .shot img { display: block; width: 100%; }
+  /* Feature graphic: wide banner, no screenshot. */
+  body.banner { background: #EEF1EC; color: #1D2422; justify-content: center; padding: 0 calc(var(--u) * 8); flex-direction: row; gap: calc(var(--u) * 6); }
+  body.banner .icon { width: calc(var(--h) * 0.5); border-radius: 22%; box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+  body.banner .txt h1, body.banner .txt p { text-align: left; max-width: none; }
+  body.banner p { color: #4E5A56; }
+  body.banner h1 { font-size: calc(var(--u) * 9.5); }
+  body.banner p { font-size: calc(var(--u) * 4.4); margin-top: calc(var(--u) * 1.6); }
+</style>
+</head>
+<body>
+<script>
+  const q = new URLSearchParams(location.search);
+  const w = +q.get('w'), h = +q.get('h');
+  const root = document.documentElement.style;
+  root.setProperty('--w', w + 'px');
+  root.setProperty('--h', h + 'px');
+  // One unit = 1 % of the shorter side, so every size keeps its proportions.
+  root.setProperty('--u', Math.min(w, h) / 100 + 'px');
+  root.setProperty('--shot-w', (q.get('shot') || '78') + '%');
+  const title = (q.get('t') || '').replace('TL;DR+', 'TL;DR<span class="plus">+</span>');
+  if (q.get('banner')) {
+    document.body.className = 'banner';
+    document.body.innerHTML = `<img class="icon" src="${q.get('img')}">
+      <div class="txt"><h1>${title}</h1><p>${q.get('s') || ''}</p></div>`;
+  } else {
+    document.body.innerHTML = `<div class="head"><h1>${title}</h1>${q.get('s') ? `<p>${q.get('s')}</p>` : ''}</div>
+      <div class="shot"><img src="${q.get('img')}"></div>`;
+  }
+</script>
+</body>
+</html>

@@ -143,6 +143,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final history = ref.watch(historyProvider);
+    // A key saved or deleted from any screen (setup on the way to a summary,
+    // settings) updates the « add a key » banner.
+    ref.listen(keyRevisionProvider, (_, _) => _checkKey());
     return Scaffold(
       appBar: AppBar(
         title: const Wordmark(),

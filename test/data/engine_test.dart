@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tldr/core/errors.dart';
 import 'package:tldr/data/engine/comment_selector.dart';
@@ -32,6 +35,8 @@ class ScriptedLlm implements LlmClient {
     requests.add(request);
     final next = outputs.removeAt(0);
     if (next is Exception) throw next;
+    // A Future stands for a provider that answers late, or never.
+    if (next is Future<Map<String, dynamic>>) return next;
     return next as Map<String, dynamic>;
   }
 
@@ -139,13 +144,56 @@ void main() {
       expect(r.meta.model, 'gemini-3.5-flash');
     });
 
+    test('a used-up quota hands over to the fallback, which has its own quota', () async {
+      const quota = ApiError(
+          code: 'LLM_QUOTA_EXCEEDED', message: 'Quota', retryable: true, retryAfterSeconds: 60);
+      final llm = ScriptedLlm([quota, Map<String, dynamic>.from(_valid)]);
+      final r = await engine(llm).summarize(
+          url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k');
+      expect(llm.requests.map((q) => q.model), ['gemini-3.8-flash', 'gemini-3.5-flash']);
+      expect(r.meta.model, 'gemini-3.5-flash');
+    });
+
     test('a model that does not answer leaves 25 s to the fallback', () async {
       final llm = ScriptedLlm([ApiError.timeout, Map<String, dynamic>.from(_valid)]);
       final r = await engine(llm).summarize(
           url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k');
-      expect(llm.requests.first.timeout, lessThanOrEqualTo(const Duration(seconds: 65)));
+      expect(llm.requests.first.timeout, lessThanOrEqualTo(const Duration(seconds: 63)));
       expect(llm.requests.last.timeout, greaterThan(const Duration(seconds: 65)));
       expect(r.meta.model, 'gemini-3.5-flash');
+    });
+
+    test('a model that hangs until its budget runs out still hands over', () {
+      // Regression: the fallback check found just under 25 s left once the
+      // first call had used its whole budget, so a hanging model never handed over.
+      fakeAsync((async) {
+        final clock = async.getClock(DateTime(2026, 10, 12));
+        var reads = 0;
+        final llm = ScriptedLlm([
+          Completer<Map<String, dynamic>>().future,
+          Map<String, dynamic>.from(_valid),
+        ]);
+        final api = DirectTldrApi(
+          reddit: FakeReddit(redditThread()),
+          catalog: () async => ProviderCatalog.fromJson(
+              jsonDecode(File('assets/catalog.json').readAsStringSync()) as Map<String, dynamic>),
+          llmFor: (_) => llm,
+          // Each read of the clock costs a few ms, as on a device.
+          clock: () => clock.now().add(Duration(milliseconds: 5 * reads++)),
+        );
+        SummaryResult? result;
+        Object? error;
+        api
+            .summarize(url: 'https://redd.it/abc123', provider: ProviderId.gemini, apiKey: 'k')
+            .then((r) {
+          result = r;
+        }, onError: (Object e) {
+          error = e;
+        });
+        async.elapse(DirectTldrApi.deadline);
+        expect(error, isNull);
+        expect(result?.meta.model, 'gemini-3.5-flash');
+      });
     });
 
     test('a failing fallback gives its own error, with no third call', () async {

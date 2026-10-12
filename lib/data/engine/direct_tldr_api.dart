@@ -30,6 +30,9 @@ class DirectTldrApi implements TldrApi {
 
   static const deadline = Duration(seconds: 90);
   static const _minTimeForRetry = Duration(seconds: 25);
+  // What the first call leaves the fallback: its 25 s plus slack, since the
+  // first call ends a few ms after its budget.
+  static const _fallbackReserve = Duration(seconds: 27);
 
   @override
   Future<ProviderCatalog> getModels() => _catalog();
@@ -149,8 +152,9 @@ class DirectTldrApi implements TldrApi {
   }
 
   /// One call to the request's model, plus at most:
-  /// - one call to [fallbackModel] if that model is overloaded (5xx) or does
-  ///   not answer in time; the first call leaves it 25 s when it can;
+  /// - one call to [fallbackModel] if that model is overloaded (5xx), out of
+  ///   quota or does not answer in time; the first call leaves it 25 s (plus
+  ///   slack) when it can;
   /// - one retry with the validation error if the output does not validate.
   /// Each extra call needs ≥ 25 s left (eng review R1). Returns the result and
   /// the model that produced it.
@@ -170,8 +174,8 @@ class DirectTldrApi implements TldrApi {
       final remaining = _remaining(started);
       if (remaining <= Duration.zero) throw ApiError.timeout;
       if (dioToken.isCancelled) throw ApiError.cancelled;
-      var budget = !fellBack && remaining - _minTimeForRetry >= _minTimeForRetry
-          ? remaining - _minTimeForRetry
+      var budget = !fellBack && remaining - _fallbackReserve >= _minTimeForRetry
+          ? remaining - _fallbackReserve
           : remaining;
       if (current.timeout < budget) budget = current.timeout;
       // Its own token: giving up on this call must not cancel the next one.
@@ -186,8 +190,9 @@ class DirectTldrApi implements TldrApi {
         });
         return (parse(raw), current.model);
       } on ApiError catch (e) {
-        final overloaded = e.code == 'LLM_UNAVAILABLE' || e.code == 'TIMEOUT';
-        if (!overloaded ||
+        // A free-tier quota is counted per model: the fallback has its own.
+        const handOver = {'LLM_UNAVAILABLE', 'TIMEOUT', 'LLM_QUOTA_EXCEEDED'};
+        if (!handOver.contains(e.code) ||
             fellBack ||
             dioToken.isCancelled ||
             _remaining(started) < _minTimeForRetry) {

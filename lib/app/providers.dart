@@ -95,5 +95,16 @@ class HistoryNotifier extends Notifier<HistoryState> {
   }
 }
 
+/// Bumped whenever a key is saved or deleted, so a screen showing « add a
+/// key » refreshes wherever the change happened.
+class KeyRevision extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void bump() => state++;
+}
+
+final keyRevisionProvider = NotifierProvider<KeyRevision, int>(KeyRevision.new);
+
 final historyProvider =
     NotifierProvider<HistoryNotifier, HistoryState>(HistoryNotifier.new);

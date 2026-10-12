@@ -2,6 +2,18 @@
 
 Toutes les versions notables de TL;DR+. La version de l'app (`pubspec.yaml`) suit les trois premiers chiffres de `VERSION`.
 
+## [1.0.1.0] - 2026-10-12
+
+### Changed
+- Quand Gemini n'a plus de quota, le résumé passe aussi par Gemini 3.5 Flash, qui a son propre quota : avec l'offre gratuite, tu as environ deux fois plus de résumés par jour.
+
+### Fixed
+- Quand Gemini 3.8 Flash ne répond pas, le résumé et la traduction passent bien sur Gemini 3.5 Flash au lieu d'afficher « C'est trop long ».
+- Le pied du résumé affiche « Gemini 3.5 Flash » au lieu de l'identifiant technique du modèle.
+- « il y a 1 jours » devient « il y a 2 jours » pour un post d'avant-hier.
+- L'accueil n'affiche plus « Ajoute ta clé IA » après avoir enregistré ta clé en collant un lien.
+- Le « +1 » des émotions reste sur la ligne du verdict au lieu de prendre une ligne entière.
+
 ## [1.0.0.0] - 2026-10-11
 
 Première version publique de TL;DR+, sur Android et iOS.
