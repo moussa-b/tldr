@@ -92,7 +92,13 @@ class SummaryService {
     for (final m in entry.models) {
       if (m.id == modelId) return m.name;
     }
-    return modelId;
+    // Not in the catalog (the fallback model, or one an older version used):
+    // « gemini-3.5-flash » reads « Gemini 3.5 Flash ».
+    return modelId
+        .split('-')
+        .where((w) => w.isNotEmpty)
+        .map((w) => w[0].toUpperCase() + w.substring(1))
+        .join(' ');
   }
 
   // ---- Keys -----------------------------------------------------------------
