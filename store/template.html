@@ -20,9 +20,12 @@
   html:has(body.banner) { background: #EEF1EC; }
   body {
     display: flex; flex-direction: column; align-items: center;
-    padding: calc(var(--u) * 7) calc(var(--u) * 6) 0;
+    padding: calc(var(--u) * 4) calc(var(--u) * 6) 0;
     color: var(--on-primary);
   }
+  /* Same height on every slide, so the phones line up across the set. */
+  .head { height: calc(var(--u) * 30); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  h1, p { text-wrap: balance; }
   h1 {
     font: 600 calc(var(--u) * 7.2)/1.12 Plex, sans-serif;
     letter-spacing: -0.01em; text-align: center; max-width: 92%;
@@ -34,7 +37,7 @@
     color: var(--primary-light); text-align: center; max-width: 88%;
   }
   .shot {
-    margin-top: calc(var(--u) * 6);
+    margin-top: calc(var(--u) * 3);
     width: var(--shot-w);
     flex: 1; overflow: hidden;
     border-radius: calc(var(--u) * 4.5) calc(var(--u) * 4.5) 0 0;
@@ -68,7 +71,7 @@
     document.body.innerHTML = `<img class="icon" src="${q.get('img')}">
       <div class="txt"><h1>${title}</h1><p>${q.get('s') || ''}</p></div>`;
   } else {
-    document.body.innerHTML = `<h1>${title}</h1>${q.get('s') ? `<p>${q.get('s')}</p>` : ''}
+    document.body.innerHTML = `<div class="head"><h1>${title}</h1>${q.get('s') ? `<p>${q.get('s')}</p>` : ''}</div>
       <div class="shot"><img src="${q.get('img')}"></div>`;
   }
 </script>
