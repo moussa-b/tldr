@@ -100,7 +100,7 @@ interface Thread {
 }
 ```
 
-Un résumé (`SummaryResult`) = `{ thread, analysis, meta: { provider, model, commentsAnalyzed, commentsTotal, truncated } }`. C'est aussi le format de l'exemple embarqué (`assets/demo/summary_fr.json`).
+Un résumé (`SummaryResult`) = `{ thread, analysis, meta: { provider, model, commentsAnalyzed, commentsTotal, truncated } }`. C'est aussi le format des exemples embarqués (`assets/demo/summary_fr.json`, `summary_en.json`).
 
 ### Normalisation des URL
 
@@ -183,6 +183,19 @@ Prompts dans `lib/data/engine/prompts.dart` :
 
 `translate` traduit uniquement `shortSummary`, `detailedSummary`, `aiTake` vers le français (seule langue au MVP). `sentiment`, `emotions`, `toxicity` sont recopiés ; `language = "fr"`. Si `analysis.language == "fr"`, aucune traduction ni appel.
 
+### Langues
+
+L'interface existe en français et en anglais (détail : `docs/spec/i18n-fr-en.md`).
+
+- Réglage « Langue » (écran Réglages, D-5) : « Langue de l'appareil » (par défaut), puis chaque langue de l'app écrite dans sa propre langue. En mode appareil, la première langue de l'appareil que l'app connaît est prise ; à défaut, l'anglais (un appareil `fr_*` donne donc le français, tout le reste l'anglais). Le changement est immédiat, sans redémarrage. Le réglage est stocké dans `settings` (clé `appLanguage` : `system`, `fr`, `en`) et lu avant le premier écran.
+- Les deux langues sont déclarées à iOS (`CFBundleLocalizations`) et à Android 13+ (`locales_config.xml`) : le choix de langue par app du système passe par le mode « Langue de l'appareil ».
+- Les textes affichés viennent uniquement de `lib/l10n/app_<langue>.arb` (outil `gen-l10n`) ; les dates, nombres et pourcentages suivent la langue de l'app. Ajouter une langue = ajouter `app_xx.arb` (et la déclarer à iOS / Android).
+- Le résumé est toujours écrit dans la langue du thread, quelle que soit la langue de l'app.
+- Mise à jour depuis 1.0.x (français seulement) : une installation qui a déjà des résumés, sur un appareil que l'app afficherait dans une autre langue, garde le français (réglage « Français » enregistré au premier lancement).
+- Un changement de langue côté système (langue de l'app dans les réglages du téléphone, ou langue du téléphone) pendant que l'app tourne est le choix le plus récent : il remet le réglage sur « Langue de l'appareil ».
+- La traduction française (D-9) n'existe que dans l'app en français. En anglais, ni bouton ni sélecteur, et le résumé affiché (et partagé) est l'original ; une traduction enregistrée reste en base et revient en français.
+- « Voir un exemple » montre `assets/demo/summary_<langue>.json` (anglais à défaut).
+
 ### Catalogue et clés
 
 - Catalogue des modèles embarqué : `assets/catalog.json` (un `isDefault: true` par fournisseur, `keyHelpUrl`, `keyPattern` indicatif, `fallbackModel` facultatif). Changer de modèle = nouvelle version de l'app. Un modèle mémorisé absent du catalogue est remplacé par le modèle par défaut (R4).
@@ -236,7 +249,7 @@ lib/
     summary_service.dart
   features/
     home/ settings/ setup/ share/ summary/ (summary_screen.dart, summary_widgets.dart, dust_veil.dart)
-assets/           catalog.json, demo/summary_fr.json, icon/, fonts/ (IBM Plex Sans et Literata embarquées, licence OFL)
+assets/           catalog.json, demo/summary_{fr,en}.json, icon/, fonts/ (IBM Plex Sans et Literata embarquées, licence OFL)
 test/             fake_tldr_api.dart, fixtures/, core/, data/, widget/, live/ (vrai résumé Gemini, clés dans gemini.keys)
 tool/             live_summary.sh + live_summary/ (vrai résumé sur appareil : WebView + Gemini)
 ios/ShareExtension/
@@ -268,7 +281,7 @@ Requête de la liste d'historique : uniquement les colonnes d'affichage (`id`, `
    - Contenu : voir D-1 ; libellés FR des émotions : joie, tristesse, colère, peur, dégoût, surprise, amour, fierté, soulagement, espoir, enthousiasme, envie, culpabilité, honte, neutre ; emoji (historique uniquement) : joy 😄, sadness 🙁, anger 😠, fear 😨, disgust 🤢, surprise 😯, love 🥰, pride 😎, relief 😌, hope 🤞, excitement 😀, envy 😑, guilt 😥, shame 😶, neutral 😐.
    - Actions : Ouvrir dans Reddit (`permalink`), Partager (titre + shortSummary + permalink + « via TL;DR+ »), Régénérer (D-8).
    - Traduction : D-9. Erreurs : D-7.
-3. **Réglages** (`/settings`) : D-5. Fournisseur actif, clé, modèle, « Effacer l'historique », version.
+3. **Réglages** (`/settings`) : D-5. Fournisseur actif, clé, modèle, langue, « Effacer l'historique », version de l'app (lue dans le paquet installé).
 4. **Configuration** (`/setup`) : D-11.
 
 ### Partage depuis Reddit
@@ -398,9 +411,10 @@ Partage ──▶ [ / ] ──push──▶ [ /summary/new ] ──(pas de clé)
 │ Modèle  [ Claude Haiku 5.5    ▾ ]   │
 │               [ Enregistrer ]       │  FilledButton
 │ ✓ Clé valide                        │  résultat (voir ci-dessous)
+│ Langue  Langue de l'appareil      › │  ListTile, feuille de choix (« Langues »)
 │ ─────────────────────────────────── │
 │ Effacer l'historique                │
-│ Version 1.0.0                       │
+│ Version 1.1.0                       │
 └─────────────────────────────────────┘
 ```
 - Seul le bloc du fournisseur sélectionné est affiché ; changer de segment change le fournisseur actif.
@@ -410,7 +424,7 @@ Partage ──▶ [ / ] ──push──▶ [ /summary/new ] ──(pas de clé)
   - erreur réseau → clé enregistrée, « Enregistrée, non vérifiée » (`onSurfaceVariant`).
 - Avertissement `keyPattern` : texte d'aide sous le champ, n'empêche pas l'enregistrement.
 - « Supprimer la clé » : icône corbeille en trailing du champ quand une clé existe, avec confirmation.
-- Texte vie privée (`privacyNote`, `lib/features/settings/key_form.dart`) : « Ta clé est enregistrée uniquement sur ce téléphone et n'est envoyée qu'à ton fournisseur IA. »
+- Texte vie privée (clé `keyFormPrivacy`, `lib/l10n/app_*.arb`) : « Ta clé est enregistrée uniquement sur ce téléphone et n'est envoyée qu'à ton fournisseur IA. »
 
 #### D-6 État de chargement (approuvé D8, révisé le 2026-10-10)
 
@@ -451,7 +465,7 @@ Les erreurs de traduction ne remplacent jamais le résumé : elles s'affichent e
 
 #### D-9 Traduction (approuvé D11)
 
-- Emplacement : entre le titre et « En bref », aligné à gauche. Absent si `analysis.language == "fr"`.
+- Emplacement : entre le titre et « En bref », aligné à gauche. Absent si `analysis.language == "fr"`, et dans l'app en anglais (voir « Langues »).
 - Avant traduction : `OutlinedButton.icon` (icône `translate`) « Traduire en français ». Pendant l'appel : spinner 16 dp dans le bouton, bouton désactivé, contenu VO toujours lisible.
 - Après succès : le bouton devient un `SegmentedButton` « VO (EN) | FR » (code de langue en majuscules, `VO (??)` si code inconnu), **FR sélectionné**.
 - Le choix est mémorisé par résumé (colonne `display_lang`, `'orig'` par défaut, `'fr'` après traduction) et restauré à la réouverture. Régénérer remet `display_lang = 'orig'`.
@@ -513,7 +527,7 @@ Sous le champ URL (D-2), à la place de la liste :
   [ Voir un exemple ]                     TextButton
 ```
 - Titre `titleMedium` ; étapes en `ListTile` denses avec icônes Material `article`, `ios_share`/`share` (selon la plateforme), `bolt` ; astuce iOS en `bodySmall` affichée seulement sur iOS.
-- « Voir un exemple » ouvre `/summary/demo` : le résumé embarqué `assets/demo/summary_fr.json`, rendu avec l'écran D-1, bandeau « Exemple » à la place des actions, **jamais enregistrée** dans l'historique, aucun appel réseau.
+- « Voir un exemple » ouvre `/summary/demo` : le résumé embarqué dans la langue de l'app (`assets/demo/summary_<langue>.json`, anglais à défaut), rendu avec l'écran D-1, bandeau « Exemple » à la place des actions, **jamais enregistrée** dans l'historique, aucun appel réseau.
 
 #### Parcours utilisateur (storyboard)
 

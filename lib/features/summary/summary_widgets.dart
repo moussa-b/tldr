@@ -7,6 +7,7 @@ import '../../core/errors.dart';
 import '../../core/labels.dart';
 import '../../core/widgets/common.dart';
 import '../../data/models/models.dart';
+import '../../l10n/l10n.dart';
 
 /// One-line verdict (spec D-15).
 class VerdictLine extends StatefulWidget {
@@ -24,6 +25,7 @@ class _VerdictLineState extends State<VerdictLine> {
   @override
   Widget build(BuildContext context) {
     final a = widget.analysis;
+    final l = context.l10n;
     final colors = context.colors;
     final scheme = context.scheme;
     final style = context.text.verdict;
@@ -41,8 +43,9 @@ class _VerdictLineState extends State<VerdictLine> {
       _ => scheme.onSurfaceVariant,
     };
     final dot = Text(' · ', style: style.copyWith(color: scheme.onSurfaceVariant));
-    final semantics = 'Sentiment ${sentimentLabel(a.sentiment).toLowerCase()}. '
-        'Émotions : ${a.emotions.map(emotionLabel).join(', ')}. ${toxicityLabel(a.toxicity)}.';
+    String emotion(String e) => emotionLabel(e, l);
+    final semantics = l.summaryVerdictSemantics(sentimentLabel(a.sentiment, l).toLowerCase(),
+        a.emotions.map(emotion).join(', '), toxicityLabel(a.toxicity, l));
 
     return Semantics(
       label: semantics,
@@ -57,9 +60,9 @@ class _VerdictLineState extends State<VerdictLine> {
             margin: const EdgeInsets.only(right: 6),
             decoration: BoxDecoration(color: sentimentColor, shape: BoxShape.circle),
           ),
-          Text(sentimentLabel(a.sentiment), style: style.copyWith(color: sentimentColor)),
+          Text(sentimentLabel(a.sentiment, l), style: style.copyWith(color: sentimentColor)),
           dot,
-          Text(shown.map(emotionLabel).join(', '), style: style),
+          Text(shown.map(emotion).join(', '), style: style),
           if (hidden > 0)
             InkWell(
               onTap: () => setState(() => _expanded = true),
@@ -76,7 +79,7 @@ class _VerdictLineState extends State<VerdictLine> {
               ),
             ),
           dot,
-          Text(toxicityLabel(a.toxicity), style: style.copyWith(color: toxColor)),
+          Text(toxicityLabel(a.toxicity, l), style: style.copyWith(color: toxColor)),
         ],
       ),
     );
@@ -125,7 +128,7 @@ class _ExpandableTextState extends State<ExpandableText> {
             TextButton(
               style: TextButton.styleFrom(padding: EdgeInsets.zero),
               onPressed: () => setState(() => _expanded = !_expanded),
-              child: Text(_expanded ? 'Lire moins' : 'Lire plus'),
+              child: Text(_expanded ? context.l10n.summaryReadLess : context.l10n.summaryReadMore),
             ),
         ],
       );
@@ -178,7 +181,8 @@ class _SummaryLoadingState extends State<SummaryLoading>
   @override
   Widget build(BuildContext context) {
     final seconds = _watch.elapsed.inSeconds;
-    final step = seconds < 3 ? 'Récupération du thread…' : 'Analyse par l\'IA…';
+    final l = context.l10n;
+    final step = seconds < 3 ? l.summaryFetchingStep : l.summaryAnalyzingStep;
     final scheme = context.scheme;
     Widget bar(double widthFactor, {double height = 14}) => FractionallySizedBox(
           widthFactor: widthFactor,
@@ -194,7 +198,7 @@ class _SummaryLoadingState extends State<SummaryLoading>
         );
 
     return Semantics(
-      label: 'Résumé en cours',
+      label: l.summaryInProgress,
       liveRegion: true,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(Tokens.gutter, Tokens.xs, Tokens.gutter, Tokens.xl),
@@ -202,7 +206,7 @@ class _SummaryLoadingState extends State<SummaryLoading>
           Row(children: [
             const RedditMark(),
             const SizedBox(width: 6),
-            Text(widget.subreddit == null ? 'Thread Reddit' : 'r/${widget.subreddit}',
+            Text(widget.subreddit == null ? l.summaryRedditThread : 'r/${widget.subreddit}',
                 style: context.text.meta),
           ]),
           const SizedBox(height: Tokens.sm),
@@ -213,7 +217,7 @@ class _SummaryLoadingState extends State<SummaryLoading>
           if (seconds >= 15)
             Padding(
               padding: const EdgeInsets.only(top: Tokens.xxs),
-              child: Text('Les longs threads peuvent prendre jusqu\'à 30 s.',
+              child: Text(l.summaryLongWait,
                   style: context.text.meta),
             ),
           const SizedBox(height: Tokens.lg),
@@ -240,7 +244,7 @@ class _SummaryLoadingState extends State<SummaryLoading>
           const SizedBox(height: Tokens.lg),
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton(onPressed: widget.onCancel, child: const Text('Annuler')),
+            child: TextButton(onPressed: widget.onCancel, child: Text(l.summaryCancel)),
           ),
         ],
       ),
@@ -260,7 +264,9 @@ class SummaryErrorView extends StatefulWidget {
   });
 
   final ApiError error;
-  final String providerLabel;
+
+  /// The AI provider's name; a generic one when unknown.
+  final String? providerLabel;
   final VoidCallback onRetry;
   final VoidCallback onSettings;
   final VoidCallback onHome;
@@ -297,7 +303,8 @@ class _SummaryErrorViewState extends State<SummaryErrorView> {
   @override
   Widget build(BuildContext context) {
     final error = widget.error;
-    final copy = errorCopy(error, providerLabel: widget.providerLabel);
+    final l = context.l10n;
+    final copy = errorCopy(error, l, providerLabel: widget.providerLabel);
     final icon = switch (error.code) {
       'NETWORK_ERROR' => Icons.wifi_off_outlined,
       'LLM_QUOTA_EXCEEDED' || 'TIMEOUT' => Icons.hourglass_empty,
@@ -307,13 +314,13 @@ class _SummaryErrorViewState extends State<SummaryErrorView> {
 
     final Widget primary;
     if (error.isKeyProblem || error.code == 'UNSUPPORTED_MODEL') {
-      primary = FilledButton(onPressed: widget.onSettings, child: const Text('Ouvrir les réglages'));
+      primary = FilledButton(onPressed: widget.onSettings, child: Text(l.summaryOpenSettings));
     } else if (error.hasCountdown && _remaining > 0) {
-      primary = FilledButton(onPressed: null, child: Text('Réessayer dans ${_clock(_remaining)}'));
+      primary = FilledButton(onPressed: null, child: Text(l.summaryRetryIn(_clock(_remaining))));
     } else if (error.retryable) {
-      primary = FilledButton(onPressed: widget.onRetry, child: const Text('Réessayer'));
+      primary = FilledButton(onPressed: widget.onRetry, child: Text(l.summaryRetry));
     } else {
-      primary = FilledButton(onPressed: widget.onHome, child: const Text('Retour à l\'accueil'));
+      primary = FilledButton(onPressed: widget.onHome, child: Text(l.summaryBackHome));
     }
     final showHome = error.retryable || error.isKeyProblem;
 
@@ -335,7 +342,7 @@ class _SummaryErrorViewState extends State<SummaryErrorView> {
                 const SizedBox(height: Tokens.lg),
                 primary,
                 if (showHome)
-                  TextButton(onPressed: widget.onHome, child: const Text('Retour à l\'accueil')),
+                  TextButton(onPressed: widget.onHome, child: Text(l.summaryBackHome)),
               ],
             ),
           ),

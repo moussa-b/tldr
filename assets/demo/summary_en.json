@@ -1,0 +1,37 @@
+{
+  "thread": {
+    "id": "1abc24e",
+    "subreddit": "careerguidance",
+    "title": "What do you think of the 4-day work week?",
+    "author": "jane_doe_works",
+    "permalink": "https://www.reddit.com/r/careerguidance/comments/1abc24e/what_do_you_think_of_the_4day_work_week/",
+    "createdAt": "2026-10-07T09:12:00Z",
+    "score": 1834,
+    "upvoteRatio": 0.93,
+    "numComments": 612,
+    "isNsfw": false,
+    "selftextExcerpt": "My company has been trialing a 4-day week for 3 months..."
+  },
+  "analysis": {
+    "language": "en",
+    "shortSummary": "Most commenters welcome the four-day week trial and report a real gain in focus, but many doubt it holds up in small businesses or care jobs. The tone stays constructive, with plenty of first-hand accounts.",
+    "detailedSummary": "Two camps emerge. Office workers describe denser days but a three-day weekend that changes how they relate to work; several say they focus better and cut pointless meetings.\n\nFreelancers, healthcare workers and shop owners point out that their workload doesn't compress: fewer days means either overtime or unhappy customers. A few managers describe a quiet return to five days after six months.\n\nA last group stresses the method: the trial works when it comes with a real reorganization, not when five days of work get squeezed into four.",
+    "sentiment": "positive",
+    "emotions": [
+      "hope",
+      "excitement"
+    ],
+    "toxicity": 0.08,
+    "aiTake": "The thread pits jobs against each other more than opinions: the enthusiasm comes mostly from people whose work is measured in results rather than presence. The underlying question is about organization, not the number of days."
+  },
+  "meta": {
+    "provider": "gemini",
+    "model": "gemini-3.8-flash",
+    "commentsAnalyzed": 200,
+    "commentsTotal": 612,
+    "truncated": true,
+    "threadFromCache": false,
+    "generatedAt": "2026-10-08T20:45:40Z",
+    "durationMs": 14230
+  }
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
+import '../../l10n/l10n.dart';
 
 /// Centred column capped at 640 dp (spec D-19).
 class ReadableWidth extends StatelessWidget {
@@ -51,7 +52,7 @@ class NsfwBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-        label: 'Contenu adulte',
+        label: context.l10n.commonAdultContent,
         excludeSemantics: true,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),

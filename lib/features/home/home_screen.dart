@@ -14,6 +14,7 @@ import '../../core/labels.dart';
 import '../../core/reddit_url.dart';
 import '../../core/widgets/common.dart';
 import '../../data/db/summaries_dao.dart';
+import '../../l10n/l10n.dart';
 
 /// Home: wordmark, URL field, history (spec D-2, D-12, D-22).
 class HomeScreen extends ConsumerStatefulWidget {
@@ -29,13 +30,14 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
-  String? _fieldError;
+  /// The field holds something that is not a Reddit thread link.
+  bool _notAThread = false;
   bool _hasKey = true;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() => setState(() => _fieldError = null));
+    _controller.addListener(() => setState(() => _notAThread = false));
     _scroll.addListener(() {
       if (_scroll.position.pixels > _scroll.position.maxScrollExtent - 300) {
         ref.read(historyProvider.notifier).loadMore();
@@ -69,7 +71,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (value.isEmpty) return;
     final url = extractRedditUrl(value);
     if (url == null) {
-      setState(() => _fieldError = 'Ce lien n\'est pas un thread Reddit');
+      setState(() => _notAThread = true);
       return;
     }
     _controller.clear();
@@ -83,27 +85,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (!mounted) return;
     if (text.isEmpty) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Le presse-papiers est vide')));
+          .showSnackBar(SnackBar(content: Text(context.l10n.homeClipboardEmpty)));
       return;
     }
     _controller.text = text;
     if (extractRedditUrl(text) != null) {
       _submit(text);
     } else {
-      setState(() => _fieldError = 'Ce lien n\'est pas un thread Reddit');
+      setState(() => _notAThread = true);
     }
   }
 
   Future<void> _delete(HistoryItem item) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l = context.l10n;
     final entry = await ref.read(historyProvider.notifier).remove(item.id);
     if (entry == null) return;
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(SnackBar(
       duration: const Duration(seconds: 5),
-      content: const Text('Résumé supprimé'),
+      content: Text(l.homeSummaryDeleted),
       action: SnackBarAction(
-        label: 'Annuler',
+        label: l.homeUndo,
         onPressed: () => ref.read(historyProvider.notifier).restore(entry),
       ),
     ));
@@ -117,24 +120,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           ListTile(
             leading: const Icon(Icons.ios_share),
-            title: const Text('Partager'),
+            title: Text(context.l10n.homeShare),
             onTap: () => Navigator.pop(context, 'share'),
           ),
           ListTile(
             leading: Icon(Icons.delete_outline, color: context.scheme.error),
-            title: Text('Supprimer', style: TextStyle(color: context.scheme.error)),
+            title: Text(context.l10n.homeDelete, style: TextStyle(color: context.scheme.error)),
             onTap: () => Navigator.pop(context, 'delete'),
           ),
         ]),
       ),
     );
     if (!mounted) return;
+    final language = context.appLanguageCode;
     if (action == 'delete') await _delete(item);
     if (action == 'share') {
       final entry = await ref.read(summariesDaoProvider).getById(item.id);
       if (entry == null) return;
       await SharePlus.instance.share(ShareParams(
-        text: '${entry.thread.title}\n\n${entry.displayed.shortSummary}\n\n'
+        text: '${entry.thread.title}\n\n${entry.displayedIn(language).shortSummary}\n\n'
             '${entry.thread.permalink}\n— via TL;DR+',
       ));
     }
@@ -151,7 +155,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: const Wordmark(),
         actions: [
           IconButton(
-            tooltip: 'Réglages',
+            tooltip: context.l10n.homeSettings,
             icon: const Icon(Icons.settings_outlined),
             onPressed: () => context.push('/settings').then((_) => _checkKey()),
           ),
@@ -181,7 +185,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 padding: const EdgeInsets.fromLTRB(Tokens.gutter, Tokens.lg, Tokens.gutter, Tokens.xxs),
                 sliver: SliverToBoxAdapter(
                   child: Semantics(
-                      header: true, child: Text('Récents', style: context.text.sectionLabel)),
+                      header: true,
+                      child: Text(context.l10n.homeRecent, style: context.text.sectionLabel)),
                 ),
               ),
               SliverList.builder(
@@ -227,7 +232,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: Row(
             children: [
               IconButton(
-                tooltip: 'Coller un lien',
+                tooltip: context.l10n.homePasteLink,
                 icon: const Icon(Icons.content_paste),
                 onPressed: _paste,
               ),
@@ -239,7 +244,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   onSubmitted: (_) => _submit(),
                   style: context.text.body,
                   decoration: InputDecoration(
-                    hintText: 'Coller un lien Reddit',
+                    hintText: context.l10n.homeUrlHint,
                     hintStyle: context.text.bodyMuted,
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
@@ -259,18 +264,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       minimumSize: const Size(48, 40),
                     ),
                     onPressed: _submit,
-                    child: const Text('Résumer'),
+                    child: Text(context.l10n.homeSummarize),
                   ),
                 ),
             ],
           ),
         ),
-        if (_fieldError != null)
+        if (_notAThread)
           Padding(
             padding: const EdgeInsets.only(top: Tokens.xs),
             child: Semantics(
               liveRegion: true,
-              child: Text(_fieldError!,
+              child: Text(context.l10n.homeNotAThread,
                   style: context.text.caption.copyWith(color: scheme.error)),
             ),
           ),
@@ -297,7 +302,7 @@ class _KeyBanner extends StatelessWidget {
               const Icon(Icons.key_outlined, size: 20),
               const SizedBox(width: Tokens.sm),
               Expanded(
-                  child: Text('Ajoute ta clé IA pour commencer', style: context.text.label)),
+                  child: Text(context.l10n.homeAddKey, style: context.text.label)),
               const Icon(Icons.chevron_right),
             ]),
           ),
@@ -332,7 +337,7 @@ class _HistoryRow extends StatelessWidget {
       onDismissed: (_) => onDelete(),
       child: Semantics(
         customSemanticsActions: {
-          const CustomSemanticsAction(label: 'Supprimer'): onDelete,
+          CustomSemanticsAction(label: context.l10n.homeDelete): onDelete,
         },
         child: InkWell(
           onTap: onTap,
@@ -360,15 +365,16 @@ class _HistoryRow extends StatelessWidget {
                           subreddit: item.subreddit,
                           nsfw: item.isNsfw,
                           trailing:
-                              '${relativeDate(item.createdAt)} · ${item.provider.label} · '
-                              '${emotionLabel(item.topEmotion)}',
+                              '${relativeDate(item.createdAt, context.l10n)} · ${item.provider.label} · '
+                              '${emotionLabel(item.topEmotion, context.l10n)}',
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(width: Tokens.sm),
                   Semantics(
-                    label: 'Sentiment ${sentimentLabel(item.sentiment).toLowerCase()}',
+                    label: context.l10n
+                        .homeSentiment(sentimentLabel(item.sentiment, context.l10n).toLowerCase()),
                     excludeSemantics: true,
                     child: Text(sentimentEmoji(item.sentiment),
                         style: const TextStyle(fontSize: 18, height: 22 / 18)),
@@ -404,17 +410,17 @@ class _EmptyState extends StatelessWidget {
         children: [
           Semantics(
             header: true,
-            child: Text('Résume un thread en 3 gestes', style: context.text.titleScreen),
+            child: Text(context.l10n.homeEmptyTitle, style: context.text.titleScreen),
           ),
           const SizedBox(height: Tokens.sm),
-          step(Icons.article_outlined, 'Dans Reddit, ouvre un post'),
-          step(isIos ? Icons.ios_share : Icons.share_outlined, 'Touche Partager'),
-          step(Icons.bolt_outlined, 'Choisis TL;DR+'),
+          step(Icons.article_outlined, context.l10n.homeEmptyStep1),
+          step(isIos ? Icons.ios_share : Icons.share_outlined, context.l10n.homeEmptyStep2),
+          step(Icons.bolt_outlined, context.l10n.homeEmptyStep3),
           if (isIos)
             Padding(
               padding: const EdgeInsets.only(top: Tokens.xxs),
               child: Text(
-                'Pas dans la liste ? Touche « Plus » et active TL;DR+.',
+                context.l10n.homeEmptyIosHint,
                 style: context.text.caption,
               ),
             ),
@@ -422,7 +428,7 @@ class _EmptyState extends StatelessWidget {
           TextButton(
             style: TextButton.styleFrom(padding: EdgeInsets.zero),
             onPressed: () => context.push('/summary/demo'),
-            child: const Text('Voir un exemple'),
+            child: Text(context.l10n.homeSeeExample),
           ),
         ],
       ),

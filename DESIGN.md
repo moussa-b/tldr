@@ -146,7 +146,7 @@ components:
 ## Overview
 
 **Creative North Star:** « Le calme après le bruit ». Reddit is warm, orange and loud; TL;DR+ is cool, celadon and quiet. The calm comes from colour temperature and reading typography, not from decoration.
-**Product context:** Flutter Material 3 app (Android + iOS) that summarizes Reddit threads with the user's own AI key. Personal use first. French UI. Spec: `docs/spec/tldr-plus-spec.md`, section « App mobile > Design » (D-1 to D-22).
+**Product context:** Flutter Material 3 app (Android + iOS) that summarizes Reddit threads with the user's own AI key. Personal use first. French and English UI (texts in `lib/l10n/app_*.arb`). Spec: `docs/spec/tldr-plus-spec.md`, section « App mobile > Design » (D-1 to D-22).
 **Mode per surface:** Home, Settings, Setup = Operate. Summary = Read.
 **Reference sites:** none (competitive research declined; built from design knowledge).
 **Key characteristics:**

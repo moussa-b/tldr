@@ -48,6 +48,9 @@ dependencies:
   sqflite: ^2.4.2
   path: ^1.9.1
   webview_flutter: ^4.14.1
+  flutter_localizations:
+    sdk: flutter
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +71,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

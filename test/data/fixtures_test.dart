@@ -13,6 +13,7 @@ void main() {
   test('summaries parse and respect the analysis bounds', () {
     for (final f in [
       'assets/demo/summary_fr.json',
+      'assets/demo/summary_en.json',
       'test/fixtures/summary_en_long.json',
       'test/fixtures/summary_link.json',
     ]) {

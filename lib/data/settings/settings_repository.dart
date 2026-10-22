@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 
 import '../models/models.dart';
+import '../../l10n/app_language.dart';
+import 'dart:ui';
 
 /// A summary request started but not finished, replayed when the app comes
 /// back (eng review R2, spec D-20).
@@ -47,6 +49,7 @@ class SettingsRepository {
   static const _activeProvider = 'activeProvider';
   static const _catalog = 'catalogJson';
   static const _pending = 'pendingSummary';
+  static const _appLanguage = 'appLanguage';
   static String _modelKey(ProviderId p) => 'model.${p.name}';
 
   Future<String?> _get(String key) async {
@@ -94,4 +97,25 @@ class SettingsRepository {
       _set(_pending, jsonEncode(pending.toJson()));
 
   Future<void> clearPendingSummary() => _remove(_pending);
+
+  /// The « Langue » setting; follows the device when unset.
+  Future<AppLanguage> appLanguage() async => AppLanguage.parse(await _get(_appLanguage));
+
+  Future<void> setAppLanguage(AppLanguage language) => _set(_appLanguage, language.code);
+
+  /// The « Langue » setting at startup, on a device whose languages are
+  /// [device]. Versions before 1.1 were French only: an install that already
+  /// has summaries, on a device the app would not show in French, keeps
+  /// French.
+  Future<AppLanguage> appLanguageAtStartup(List<Locale> device) async {
+    final stored = await _get(_appLanguage);
+    if (stored != null) return AppLanguage.parse(stored);
+    final hasHistory = (await _db.query('summaries', columns: ['id'], limit: 1)).isNotEmpty;
+    if (!hasHistory || resolveAppLocale(AppLanguage.system, device).languageCode == 'fr') {
+      return AppLanguage.system;
+    }
+    const french = FixedLanguage(Locale('fr'));
+    await setAppLanguage(french);
+    return french;
+  }
 }

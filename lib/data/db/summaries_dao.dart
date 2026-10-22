@@ -58,10 +58,13 @@ class SummaryEntry {
   final int commentsTotal;
   final DateTime createdAt;
 
-  Analysis get displayed =>
-      displayLang == 'fr' && analysisFr != null ? analysisFr! : analysis;
+  /// The analysis shown in an app whose language is [appLanguage]: the
+  /// French translation only exists in the French app (spec « Langues »).
+  Analysis displayedIn(String appLanguage) =>
+      appLanguage == 'fr' && displayLang == 'fr' && analysisFr != null ? analysisFr! : analysis;
 
-  bool get canTranslate => analysis.language != 'fr';
+  /// « Traduire en français » is offered in the French app only.
+  bool canTranslateIn(String appLanguage) => appLanguage == 'fr' && analysis.language != 'fr';
 
   Map<String, Object?> toRow() => {
         'id': id,

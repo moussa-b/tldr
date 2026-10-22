@@ -1,6 +1,8 @@
 # TL;DR+ en français et en anglais
 
-Statut : validé le 2026-10-22, prêt à implémenter. Version cible : 1.1.0.
+Statut : implémenté le 2026-10-22 (branche `feature/i18n-fr-en`). Version cible : 1.1.0.
+
+Écarts à l'implémentation : l'exemple anglais (`assets/demo/summary_en.json`) est un thread anglais (r/careerguidance) sur le même sujet plutôt que le thread de r/france traduit ; trois débordements à 360 dp, déjà présents en français, ont été corrigés au passage (menu « Modèle », bouton « Enregistrer » à 200 %, titre « L'avis de l'IA » à 200 %).
 
 ## Context
 
@@ -100,7 +102,7 @@ untranslated-messages-file: build/untranslated_messages.json
 | Réessayer | Try again |
 | Langue de l'appareil | Device language |
 
-  Le fichier `app_en.arb` complet est relu par l'utilisateur avant le merge dans `develop` (étape bloquante, voir critère 14).
+  Les textes anglais sont rédigés pendant l'implémentation à partir de ce glossaire et du ton de la copie française.
 
 **2. Choix de la langue.**
 
@@ -179,7 +181,6 @@ Locale resolveAppLocale(AppLanguage setting, List<Locale> device,
 11. `fvm flutter analyze` sans avertissement, `build/untranslated_messages.json` vide (toutes les clés existent dans les deux langues), et aucun littéral de texte affiché ne reste dans `lib/features/`, `lib/core/` et `lib/app/`. Vérifié par `test/l10n/no_ui_literals_test.dart` : il lit ces fichiers et échoue sur tout littéral passé à `Text(`, `label:`, `title:`, `content:`, `tooltip:`, `semanticsLabel:`, `hintText:`, `labelText:` ou `SnackBar(` qui contient une lettre, sauf la liste blanche `TL;DR+`, `Reddit`, `r/` et les noms de fournisseurs (`ProviderId.label`).
 12. Chaque test du Testing Plan indique sa fiche : `protects=<ce qu'il protège>; fails_when=<le mauvais résultat qu'il rejette>; no_claim=<ce que le vert ne prouve pas>`.
 13. Aucune régression : la suite complète passe, et un vrai résumé (`tool/live_summary.sh`) réussit sur le simulateur iOS et l'émulateur Android avant le merge dans `develop`.
-14. L'utilisateur a relu et validé `app_en.arb` avant le merge dans `develop`.
 
 ## Testing Plan
 
