@@ -6,6 +6,9 @@ import '../../app/theme.dart';
 import '../../core/widgets/common.dart';
 import '../../data/models/models.dart';
 import 'key_form.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/app_language.dart';
+import 'language_picker.dart';
 
 /// Settings (spec D-5).
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -41,7 +44,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     for (final f in fallbacks) {
       if (!mounted) break;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Modèle ${f.from} indisponible, ${f.to} utilisé.')));
+          content: Text(context.l10n.settingsModelFallback(f.from, f.to))));
     }
   }
 
@@ -67,11 +70,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Effacer l\'historique ?'),
-        content: const Text('Tous les résumés enregistrés sur ce téléphone seront supprimés.'),
+        title: Text(context.l10n.settingsClearTitle),
+        content: Text(context.l10n.settingsClearBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Effacer')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(context.l10n.settingsCancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(context.l10n.settingsClear)),
         ],
       ),
     );
@@ -79,22 +86,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     await ref.read(historyProvider.notifier).clearAll();
     if (mounted) {
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Historique effacé')));
+          .showSnackBar(SnackBar(content: Text(context.l10n.settingsCleared)));
     }
   }
+
+  Future<void> _chooseLanguage() async {
+    final chosen = await showModalBottomSheet<AppLanguage>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: LanguagePicker(
+          selected: ref.read(appLanguageProvider),
+          onSelected: (language) => Navigator.pop(sheet, language),
+        ),
+      ),
+    );
+    if (chosen != null) await ref.read(appLanguageProvider.notifier).set(chosen);
+  }
+
+  String _languageLabel(AppLanguage language) => switch (language) {
+        FixedLanguage(:final locale) => LanguagePicker.nameOf(locale),
+        SystemLanguage() => context.l10n.settingsDeviceLanguage,
+      };
 
   @override
   Widget build(BuildContext context) {
     final catalog = _catalog;
+    final l = context.l10n;
+    final version = ref.watch(appVersionProvider).value;
     return Scaffold(
-      appBar: AppBar(title: Text('Réglages', style: context.text.titleScreen)),
+      appBar: AppBar(title: Text(l.settingsTitle, style: context.text.titleScreen)),
       body: catalog == null
           ? const SizedBox.shrink()
           : ReadableWidth(
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(Tokens.gutter, Tokens.xs, Tokens.gutter, Tokens.xl),
                 children: [
-                  Text('Fournisseur IA', style: context.text.label),
+                  Text(l.settingsProvider, style: context.text.label),
                   const SizedBox(height: 6),
                   SizedBox(
                     width: double.infinity,
@@ -115,29 +143,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     onSaved: (_) {},
                   ),
                   const SizedBox(height: Tokens.lg),
-                  Text('Modèle', style: context.text.label),
+                  Text(l.settingsModel, style: context.text.label),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     key: ValueKey(_provider),
                     initialValue: _model,
+                    // Long model names are cut rather than overflowing a narrow phone.
+                    isExpanded: true,
                     items: [
                       for (final m in catalog.provider(_provider).models)
-                        DropdownMenuItem(value: m.id, child: Text(m.name)),
+                        DropdownMenuItem(
+                            value: m.id, child: Text(m.name, overflow: TextOverflow.ellipsis)),
                     ],
                     onChanged: _selectModel,
                   ),
-                  const SizedBox(height: Tokens.xl),
+                  const SizedBox(height: Tokens.lg),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(l.settingsLanguage, style: context.text.label),
+                    subtitle: Text(_languageLabel(ref.watch(appLanguageProvider)),
+                        style: context.text.body),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _chooseLanguage,
+                  ),
+                  const SizedBox(height: Tokens.md),
                   const Divider(),
                   ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text('Effacer l\'historique',
+                    title: Text(l.settingsClearHistory,
                         style: context.text.body.copyWith(color: context.scheme.error)),
                     onTap: _clearHistory,
                   ),
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text('Version 1.0.0', style: context.text.meta),
-                  ),
+                  if (version != null)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(l.settingsVersion(version), style: context.text.meta),
+                    ),
                 ],
               ),
             ),

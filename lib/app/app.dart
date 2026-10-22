@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../core/errors.dart';
 import '../core/reddit_url.dart';
 import '../features/share/share_intent_source.dart';
+import '../l10n/app_localizations.dart';
 import 'providers.dart';
 import 'router.dart';
 import 'theme.dart';
@@ -24,7 +25,7 @@ class TldrApp extends ConsumerStatefulWidget {
   ConsumerState<TldrApp> createState() => _TldrAppState();
 }
 
-class _TldrAppState extends ConsumerState<TldrApp> {
+class _TldrAppState extends ConsumerState<TldrApp> with WidgetsBindingObserver {
   late final GoRouter _router = buildRouter();
   late final ShareIntentSource _share = widget.shareSource ?? PluginShareIntentSource();
   StreamSubscription<String>? _shareSub;
@@ -34,6 +35,7 @@ class _TldrAppState extends ConsumerState<TldrApp> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _shareSub = _share.stream.listen(_onShared);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final initial = await _share.initial();
@@ -48,17 +50,23 @@ class _TldrAppState extends ConsumerState<TldrApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _shareSub?.cancel();
     _lifecycle?.dispose();
     _router.dispose();
     super.dispose();
   }
 
+  /// The device's language changed while the app runs.
+  @override
+  void didChangeLocales(List<Locale>? locales) =>
+      ref.read(deviceLocalesProvider.notifier).update(locales ?? const []);
+
   void _onShared(String text) {
     final url = extractRedditUrl(text);
     if (url == null) {
       scaffoldMessengerKey.currentState?.showSnackBar(
-          const SnackBar(content: Text('Ce lien n\'est pas un thread Reddit')));
+          SnackBar(content: Text(ref.read(appLocalizationsProvider).appNotAThread)));
       return;
     }
     openSharedUrl(_router, url);
@@ -81,16 +89,19 @@ class _TldrAppState extends ConsumerState<TldrApp> {
       }
       final entry = await service.summarize(pending.url, resume: pending);
       ref.read(historyProvider.notifier).reload();
+      final l = ref.read(appLocalizationsProvider);
       scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(
-        content: const Text('Résumé prêt'),
-        action: SnackBarAction(label: 'Voir', onPressed: () => _router.push('/summary/${entry.id}')),
+        content: Text(l.appSummaryReady),
+        action: SnackBarAction(
+            label: l.appView, onPressed: () => _router.push('/summary/${entry.id}')),
       ));
     } on ApiError catch (e) {
       if (e.code != 'CANCELLED') {
+        final l = ref.read(appLocalizationsProvider);
         scaffoldMessengerKey.currentState?.showSnackBar(SnackBar(
-          content: const Text('Le résumé a échoué'),
+          content: Text(l.appSummaryFailed),
           action: SnackBarAction(
-            label: 'Détails',
+            label: l.appDetails,
             onPressed: () => _router.push(
                 '/summary/new?url=${Uri.encodeQueryComponent(pending.url)}'),
           ),
@@ -109,6 +120,9 @@ class _TldrAppState extends ConsumerState<TldrApp> {
         darkTheme: AppTheme.dark(),
         themeMode: ThemeMode.system,
         scaffoldMessengerKey: scaffoldMessengerKey,
+        locale: ref.watch(appLocaleProvider),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
         routerConfig: _router,
       );
 }

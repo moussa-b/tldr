@@ -93,7 +93,7 @@ void main() {
     expect(await deps.service.modelName(ProviderId.gemini, 'gemini-3.8-flash'), 'Gemini 3.8 Flash');
     expect(await deps.service.modelName(ProviderId.gemini, 'gemini-3.5-flash'), 'Gemini 3.5 Flash');
     expect(await deps.service.modelName(ProviderId.openai, 'gpt-5-mini'), 'GPT-5 mini');
-    expect(await deps.service.modelName(ProviderId.gemini, 'gemini-pro-latest'), 'Gemini Pro (dernière version)');
+    expect(await deps.service.modelName(ProviderId.gemini, 'gemini-pro-latest'), 'Gemini Pro Latest');
   });
 
   test('a stored model missing from the catalog falls back to the default (R4)', () async {
@@ -107,10 +107,13 @@ void main() {
   test('translate stores the French version and shows it', () async {
     final deps = await testDeps();
     final entry = await deps.service.summarize('https://www.reddit.com/r/AskReddit/comments/1xyz98q/x/');
-    if (!entry.canTranslate) return; // fixture choice depends on the URL hash
+    if (!entry.canTranslateIn('fr')) return; // fixture choice depends on the URL hash
     final translated = await deps.service.translate(entry);
     expect(translated.displayLang, 'fr');
-    expect(translated.displayed.language, 'fr');
+    expect(translated.displayedIn('fr').language, 'fr');
+    // The English app never shows the French translation, nor offers it.
+    expect(translated.displayedIn('en').language, entry.analysis.language);
+    expect(translated.canTranslateIn('en'), isFalse);
   });
 
   group('Reddit listing parsing', () {

@@ -183,6 +183,17 @@ Prompts dans `lib/data/engine/prompts.dart` :
 
 `translate` traduit uniquement `shortSummary`, `detailedSummary`, `aiTake` vers le français (seule langue au MVP). `sentiment`, `emotions`, `toxicity` sont recopiés ; `language = "fr"`. Si `analysis.language == "fr"`, aucune traduction ni appel.
 
+### Langues
+
+L'interface existe en français et en anglais (détail : `docs/spec/i18n-fr-en.md`).
+
+- Réglage « Langue » (écran Réglages, D-5) : « Langue de l'appareil » (par défaut), puis chaque langue de l'app écrite dans sa propre langue. En mode appareil, la première langue de l'appareil que l'app connaît est prise ; à défaut, l'anglais (un appareil `fr_*` donne donc le français, tout le reste l'anglais). Le changement est immédiat, sans redémarrage. Le réglage est stocké dans `settings` (clé `appLanguage` : `system`, `fr`, `en`) et lu avant le premier écran.
+- Les deux langues sont déclarées à iOS (`CFBundleLocalizations`) et à Android 13+ (`locales_config.xml`) : le choix de langue par app du système passe par le mode « Langue de l'appareil ».
+- Les textes affichés viennent uniquement de `lib/l10n/app_<langue>.arb` (outil `gen-l10n`) ; les dates, nombres et pourcentages suivent la langue de l'app. Ajouter une langue = ajouter `app_xx.arb` (et la déclarer à iOS / Android).
+- Le résumé est toujours écrit dans la langue du thread, quelle que soit la langue de l'app.
+- La traduction française (D-9) n'existe que dans l'app en français. En anglais, ni bouton ni sélecteur, et le résumé affiché (et partagé) est l'original ; une traduction enregistrée reste en base et revient en français.
+- « Voir un exemple » montre `assets/demo/summary_<langue>.json` (anglais à défaut).
+
 ### Catalogue et clés
 
 - Catalogue des modèles embarqué : `assets/catalog.json` (un `isDefault: true` par fournisseur, `keyHelpUrl`, `keyPattern` indicatif, `fallbackModel` facultatif). Changer de modèle = nouvelle version de l'app. Un modèle mémorisé absent du catalogue est remplacé par le modèle par défaut (R4).
@@ -451,7 +462,7 @@ Les erreurs de traduction ne remplacent jamais le résumé : elles s'affichent e
 
 #### D-9 Traduction (approuvé D11)
 
-- Emplacement : entre le titre et « En bref », aligné à gauche. Absent si `analysis.language == "fr"`.
+- Emplacement : entre le titre et « En bref », aligné à gauche. Absent si `analysis.language == "fr"`, et dans l'app en anglais (voir « Langues »).
 - Avant traduction : `OutlinedButton.icon` (icône `translate`) « Traduire en français ». Pendant l'appel : spinner 16 dp dans le bouton, bouton désactivé, contenu VO toujours lisible.
 - Après succès : le bouton devient un `SegmentedButton` « VO (EN) | FR » (code de langue en majuscules, `VO (??)` si code inconnu), **FR sélectionné**.
 - Le choix est mémorisé par résumé (colonne `display_lang`, `'orig'` par défaut, `'fr'` après traduction) et restauré à la réouverture. Régénérer remet `display_lang = 'orig'`.

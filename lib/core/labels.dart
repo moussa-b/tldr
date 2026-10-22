@@ -1,32 +1,32 @@
 import 'package:intl/intl.dart';
 
 import '../data/models/models.dart';
+import '../l10n/app_localizations.dart';
 
-/// French labels and emoji (spec section « Écrans », D-15).
-const emotionLabels = {
-  'joy': 'joie',
-  'sadness': 'tristesse',
-  'anger': 'colère',
-  'fear': 'peur',
-  'disgust': 'dégoût',
-  'surprise': 'surprise',
-  'love': 'amour',
-  'pride': 'fierté',
-  'relief': 'soulagement',
-  'hope': 'espoir',
-  'excitement': 'enthousiasme',
-  'envy': 'envie',
-  'guilt': 'culpabilité',
-  'shame': 'honte',
-  'neutral': 'neutre',
-};
+/// Labels and emoji in the app's language (spec section « Écrans », D-15).
+String emotionLabel(String emotion, AppLocalizations l) => switch (emotion) {
+      'joy' => l.emotionJoy,
+      'sadness' => l.emotionSadness,
+      'anger' => l.emotionAnger,
+      'fear' => l.emotionFear,
+      'disgust' => l.emotionDisgust,
+      'surprise' => l.emotionSurprise,
+      'love' => l.emotionLove,
+      'pride' => l.emotionPride,
+      'relief' => l.emotionRelief,
+      'hope' => l.emotionHope,
+      'excitement' => l.emotionExcitement,
+      'envy' => l.emotionEnvy,
+      'guilt' => l.emotionGuilt,
+      'shame' => l.emotionShame,
+      'neutral' => l.emotionNeutral,
+      _ => emotion,
+    };
 
-String emotionLabel(String emotion) => emotionLabels[emotion] ?? emotion;
-
-String sentimentLabel(Sentiment s) => switch (s) {
-      Sentiment.positive => 'Positif',
-      Sentiment.negative => 'Négatif',
-      Sentiment.neutral => 'Neutre',
+String sentimentLabel(Sentiment s, AppLocalizations l) => switch (s) {
+      Sentiment.positive => l.sentimentPositive,
+      Sentiment.negative => l.sentimentNegative,
+      Sentiment.neutral => l.sentimentNeutral,
     };
 
 /// History list only (D-15: no emoji on the summary screen).
@@ -45,36 +45,48 @@ ToxicityLevel toxicityLevel(double? value) {
   return ToxicityLevel.high;
 }
 
-String toxicityLabel(double? value) => switch (toxicityLevel(value)) {
-      ToxicityLevel.low => 'Toxicité faible',
-      ToxicityLevel.moderate => 'Toxicité modérée',
-      ToxicityLevel.high => 'Toxicité élevée',
-      ToxicityLevel.unknown => 'Toxicité —',
+String toxicityLabel(double? value, AppLocalizations l) => switch (toxicityLevel(value)) {
+      ToxicityLevel.low => l.toxicityLow,
+      ToxicityLevel.moderate => l.toxicityModerate,
+      ToxicityLevel.high => l.toxicityHigh,
+      ToxicityLevel.unknown => l.toxicityUnknown,
     };
 
-/// « il y a 14 h », « hier », « 3 oct. ».
-String relativeDate(DateTime date, {DateTime? now}) {
-  final current = now ?? DateTime.now();
+/// Whole calendar days between [date] and [now].
+int _calendarDays(DateTime date, DateTime now) {
   final local = date.toLocal();
-  final diff = current.difference(local);
-  if (diff.inMinutes < 1) return 'à l\'instant';
-  if (diff.inMinutes < 60) return 'il y a ${diff.inMinutes} min';
-  if (diff.inHours < 24 && local.day == current.day) return 'il y a ${diff.inHours} h';
-  final yesterday = DateTime(current.year, current.month, current.day - 1);
-  if (local.year == yesterday.year && local.month == yesterday.month && local.day == yesterday.day) {
-    return 'hier';
-  }
-  // Calendar days: two days back is « 2 jours » even when under 48 h ago.
-  final days = (DateTime(current.year, current.month, current.day)
+  return (DateTime(now.year, now.month, now.day)
                   .difference(DateTime(local.year, local.month, local.day))
                   .inHours /
               24)
           .round();
-  if (days < 7) return 'il y a ${days.clamp(2, 6)} jours';
-  final sameYear = local.year == current.year;
-  return DateFormat(sameYear ? 'd MMM' : 'd MMM y', 'fr_FR').format(local);
 }
 
-String compactNumber(int value) => NumberFormat.compact(locale: 'fr_FR').format(value);
+/// True when [relativeDate] shows a date rather than a time ago.
+bool isAbsoluteDate(DateTime date, {DateTime? now}) =>
+    _calendarDays(date, now ?? DateTime.now()) >= 7;
 
-String percent(double ratio) => '${(ratio * 100).round()} %';
+/// « il y a 14 h », « hier », « 3 oct. » (or « 14 h ago », « yesterday », « Oct 3 »).
+String relativeDate(DateTime date, AppLocalizations l, {DateTime? now}) {
+  final current = now ?? DateTime.now();
+  final local = date.toLocal();
+  final diff = current.difference(local);
+  if (diff.inMinutes < 1) return l.relativeJustNow;
+  if (diff.inMinutes < 60) return l.relativeMinutes('${diff.inMinutes}');
+  if (diff.inHours < 24 && local.day == current.day) return l.relativeHours('${diff.inHours}');
+  final yesterday = DateTime(current.year, current.month, current.day - 1);
+  if (local.year == yesterday.year && local.month == yesterday.month && local.day == yesterday.day) {
+    return l.relativeYesterday;
+  }
+  // Calendar days: two days back is « 2 jours » even when under 48 h ago.
+  final days = _calendarDays(date, current);
+  if (days < 7) return l.relativeDays('${days.clamp(2, 6)}');
+  final sameYear = local.year == current.year;
+  return DateFormat(sameYear ? l.dateShortPattern : l.dateLongPattern, l.localeName)
+      .format(local);
+}
+
+String compactNumber(int value, AppLocalizations l) =>
+    NumberFormat.compact(locale: l.localeName).format(value);
+
+String percent(double ratio, AppLocalizations l) => l.percentValue('${(ratio * 100).round()}');

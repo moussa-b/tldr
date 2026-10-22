@@ -12,6 +12,10 @@ import '../data/secure/key_store.dart';
 import '../data/settings/settings_repository.dart';
 import '../data/models/models.dart';
 import '../data/summary_service.dart';
+import '../l10n/app_language.dart';
+import '../l10n/app_localizations.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:flutter/widgets.dart';
 
 /// Overridden in main() (and tests) with an opened database.
 final databaseProvider = Provider<AppDatabase>(
@@ -108,3 +112,43 @@ final keyRevisionProvider = NotifierProvider<KeyRevision, int>(KeyRevision.new);
 
 final historyProvider =
     NotifierProvider<HistoryNotifier, HistoryState>(HistoryNotifier.new);
+
+/// The « Langue » setting as read before the first frame (main() overrides
+/// it), so the first screen is already in the right language.
+final initialAppLanguageProvider = Provider<AppLanguage>((ref) => AppLanguage.system);
+
+class AppLanguageNotifier extends Notifier<AppLanguage> {
+  @override
+  AppLanguage build() => ref.read(initialAppLanguageProvider);
+
+  Future<void> set(AppLanguage language) async {
+    state = language;
+    await ref.read(settingsProvider).setAppLanguage(language);
+  }
+}
+
+final appLanguageProvider =
+    NotifierProvider<AppLanguageNotifier, AppLanguage>(AppLanguageNotifier.new);
+
+/// The device's languages, updated when they change while the app runs.
+class DeviceLocales extends Notifier<List<Locale>> {
+  @override
+  List<Locale> build() => WidgetsBinding.instance.platformDispatcher.locales;
+
+  void update(List<Locale> locales) => state = locales;
+}
+
+final deviceLocalesProvider =
+    NotifierProvider<DeviceLocales, List<Locale>>(DeviceLocales.new);
+
+/// The language the app shows.
+final appLocaleProvider = Provider<Locale>((ref) =>
+    resolveAppLocale(ref.watch(appLanguageProvider), ref.watch(deviceLocalesProvider)));
+
+/// The installed version, shown in the settings.
+final appVersionProvider =
+    FutureProvider<String>((ref) async => (await PackageInfo.fromPlatform()).version);
+
+/// The app's texts outside the widget tree (snackbars of the root widget).
+final appLocalizationsProvider =
+    Provider<AppLocalizations>((ref) => lookupAppLocalizations(ref.watch(appLocaleProvider)));

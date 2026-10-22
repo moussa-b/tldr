@@ -7,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'app/app.dart';
 import 'app/providers.dart';
 import 'data/db/app_database.dart';
+import 'data/settings/settings_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,10 +17,14 @@ Future<void> main() async {
       yield LicenseEntryWithLineBreaks([font], await rootBundle.loadString('assets/fonts/$file.txt'));
     }
   });
-  await initializeDateFormatting('fr_FR');
+  await initializeDateFormatting();
   final database = await AppDatabase.open();
+  final language = await SettingsRepository(database.db).appLanguage();
   runApp(ProviderScope(
-    overrides: [databaseProvider.overrideWithValue(database)],
+    overrides: [
+      databaseProvider.overrideWithValue(database),
+      initialAppLanguageProvider.overrideWithValue(language),
+    ],
     child: const TldrApp(),
   ));
 }

@@ -1,0 +1,832 @@
+{
+  "@@locale": "en",
+  "languageName": "English",
+  "@languageName": {
+    "description": "This language's own name, shown in the language setting."
+  },
+  "errorProviderFallback": "AI provider",
+  "@errorProviderFallback": {
+    "description": "Stands for the AI provider when its name is unknown."
+  },
+  "errorQuotaTitle": "Provider quota reached",
+  "@errorQuotaTitle": {
+    "description": "Error title."
+  },
+  "errorQuotaBody": "Your {provider} quota is used up for now.",
+  "@errorQuotaBody": {
+    "description": "Error body.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "errorRemovedTitle": "Post removed by moderators",
+  "@errorRemovedTitle": {
+    "description": "Error title."
+  },
+  "errorRemovedBody": "This thread is no longer available on Reddit.",
+  "@errorRemovedBody": {
+    "description": "Error body."
+  },
+  "errorPrivateTitle": "This subreddit is private",
+  "@errorPrivateTitle": {
+    "description": "Error title."
+  },
+  "errorPrivateBody": "Only its members can read this thread.",
+  "@errorPrivateBody": {
+    "description": "Error body."
+  },
+  "errorQuarantinedTitle": "Quarantined subreddit",
+  "@errorQuarantinedTitle": {
+    "description": "Error title."
+  },
+  "errorQuarantinedBody": "Reddit restricts access to this subreddit.",
+  "@errorQuarantinedBody": {
+    "description": "Error body."
+  },
+  "errorBannedTitle": "Banned subreddit",
+  "@errorBannedTitle": {
+    "description": "Error title."
+  },
+  "errorBannedBody": "This subreddit no longer exists on Reddit.",
+  "@errorBannedBody": {
+    "description": "Error body."
+  },
+  "errorDeletedTitle": "This post was deleted",
+  "@errorDeletedTitle": {
+    "description": "Error title."
+  },
+  "errorDeletedBody": "There is nothing left to summarize.",
+  "@errorDeletedBody": {
+    "description": "Error body."
+  },
+  "errorNotFoundTitle": "Thread not found",
+  "@errorNotFoundTitle": {
+    "description": "Error title."
+  },
+  "errorNotFoundBody": "Reddit can't find this post. Check the link.",
+  "@errorNotFoundBody": {
+    "description": "Error body."
+  },
+  "errorUnsupportedUrlTitle": "This link isn't a thread",
+  "@errorUnsupportedUrlTitle": {
+    "description": "Error title."
+  },
+  "errorUnsupportedUrlBody": "TL;DR+ summarizes Reddit posts, not profiles or subreddits.",
+  "@errorUnsupportedUrlBody": {
+    "description": "Error body."
+  },
+  "errorInvalidUrlTitle": "This link isn't a Reddit thread",
+  "@errorInvalidUrlTitle": {
+    "description": "Error title."
+  },
+  "errorInvalidUrlBody": "Share or paste a link to a Reddit post.",
+  "@errorInvalidUrlBody": {
+    "description": "Error body."
+  },
+  "errorEmptyTitle": "Nothing to summarize",
+  "@errorEmptyTitle": {
+    "description": "Error title."
+  },
+  "errorEmptyBody": "This post has no text or usable comments.",
+  "@errorEmptyBody": {
+    "description": "Error body."
+  },
+  "errorKeyInvalidTitle": "Your {provider} key was refused",
+  "@errorKeyInvalidTitle": {
+    "description": "Error title.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "errorKeyInvalidBody": "Check or replace your key in Settings.",
+  "@errorKeyInvalidBody": {
+    "description": "Error body."
+  },
+  "errorKeyMissingTitle": "No {provider} key",
+  "@errorKeyMissingTitle": {
+    "description": "Error title.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "errorKeyMissingBody": "Add your AI key to start a summary.",
+  "@errorKeyMissingBody": {
+    "description": "Error body."
+  },
+  "errorModelUnavailableTitle": "Model unavailable",
+  "@errorModelUnavailableTitle": {
+    "description": "Error title."
+  },
+  "errorModelUnavailableBody": "Pick another model in Settings.",
+  "@errorModelUnavailableBody": {
+    "description": "Error body."
+  },
+  "errorTimeoutTitle": "This is taking too long",
+  "@errorTimeoutTitle": {
+    "description": "Error title."
+  },
+  "errorTimeoutBody": "The summary didn't finish in time. Try again in a moment.",
+  "@errorTimeoutBody": {
+    "description": "Error body."
+  },
+  "errorNetworkTitle": "No connection",
+  "@errorNetworkTitle": {
+    "description": "Error title."
+  },
+  "errorNetworkBody": "Check your internet connection, then try again.",
+  "@errorNetworkBody": {
+    "description": "Error body."
+  },
+  "errorLlmUnavailableTitle": "{provider} isn't responding",
+  "@errorLlmUnavailableTitle": {
+    "description": "Error title.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "errorLlmUnavailableBody": "The AI provider is unavailable for now.",
+  "@errorLlmUnavailableBody": {
+    "description": "Error body."
+  },
+  "errorOutputInvalidTitle": "Unusable AI answer",
+  "@errorOutputInvalidTitle": {
+    "description": "Error title."
+  },
+  "errorOutputInvalidBody": "The AI returned an incomplete result. Try again.",
+  "@errorOutputInvalidBody": {
+    "description": "Error body."
+  },
+  "errorRedditBlockedTitle": "Reddit is refusing access",
+  "@errorRedditBlockedTitle": {
+    "description": "Error title."
+  },
+  "errorRedditBlockedBody": "Reddit is temporarily blocking this thread. Try again in a few minutes.",
+  "@errorRedditBlockedBody": {
+    "description": "Error body."
+  },
+  "errorRedditUnavailableTitle": "Reddit isn't responding",
+  "@errorRedditUnavailableTitle": {
+    "description": "Error title."
+  },
+  "errorRedditUnavailableBody": "Reddit is unavailable for now. Try again.",
+  "@errorRedditUnavailableBody": {
+    "description": "Error body."
+  },
+  "errorGenericTitle": "Something went wrong",
+  "@errorGenericTitle": {
+    "description": "Error title."
+  },
+  "errorGenericBody": "Try again in a moment.",
+  "@errorGenericBody": {
+    "description": "Error body."
+  },
+  "emotionJoy": "joy",
+  "@emotionJoy": {
+    "description": "Emotion."
+  },
+  "emotionSadness": "sadness",
+  "@emotionSadness": {
+    "description": "Emotion."
+  },
+  "emotionAnger": "anger",
+  "@emotionAnger": {
+    "description": "Emotion."
+  },
+  "emotionFear": "fear",
+  "@emotionFear": {
+    "description": "Emotion."
+  },
+  "emotionDisgust": "disgust",
+  "@emotionDisgust": {
+    "description": "Emotion."
+  },
+  "emotionSurprise": "surprise",
+  "@emotionSurprise": {
+    "description": "Emotion."
+  },
+  "emotionLove": "love",
+  "@emotionLove": {
+    "description": "Emotion."
+  },
+  "emotionPride": "pride",
+  "@emotionPride": {
+    "description": "Emotion."
+  },
+  "emotionRelief": "relief",
+  "@emotionRelief": {
+    "description": "Emotion."
+  },
+  "emotionHope": "hope",
+  "@emotionHope": {
+    "description": "Emotion."
+  },
+  "emotionExcitement": "excitement",
+  "@emotionExcitement": {
+    "description": "Emotion."
+  },
+  "emotionEnvy": "envy",
+  "@emotionEnvy": {
+    "description": "Emotion."
+  },
+  "emotionGuilt": "guilt",
+  "@emotionGuilt": {
+    "description": "Emotion."
+  },
+  "emotionShame": "shame",
+  "@emotionShame": {
+    "description": "Emotion."
+  },
+  "emotionNeutral": "neutral",
+  "@emotionNeutral": {
+    "description": "Emotion."
+  },
+  "sentimentPositive": "Positive",
+  "@sentimentPositive": {
+    "description": "Sentiment."
+  },
+  "sentimentNegative": "Negative",
+  "@sentimentNegative": {
+    "description": "Sentiment."
+  },
+  "sentimentNeutral": "Neutral",
+  "@sentimentNeutral": {
+    "description": "Sentiment."
+  },
+  "toxicityLow": "Low toxicity",
+  "@toxicityLow": {
+    "description": "Toxicity level."
+  },
+  "toxicityModerate": "Moderate toxicity",
+  "@toxicityModerate": {
+    "description": "Toxicity level."
+  },
+  "toxicityHigh": "High toxicity",
+  "@toxicityHigh": {
+    "description": "Toxicity level."
+  },
+  "toxicityUnknown": "Toxicity —",
+  "@toxicityUnknown": {
+    "description": "Toxicity unknown."
+  },
+  "relativeJustNow": "just now",
+  "@relativeJustNow": {
+    "description": "Under a minute ago."
+  },
+  "relativeMinutes": "{count} min ago",
+  "@relativeMinutes": {
+    "description": "Minutes ago.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "relativeHours": "{count} h ago",
+  "@relativeHours": {
+    "description": "Hours ago, same day.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "relativeYesterday": "yesterday",
+  "@relativeYesterday": {
+    "description": "The day before."
+  },
+  "relativeDays": "{count} days ago",
+  "@relativeDays": {
+    "description": "2 to 6 calendar days ago.",
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "dateShortPattern": "MMM d",
+  "@dateShortPattern": {
+    "description": "intl DateFormat pattern for a date this year."
+  },
+  "dateLongPattern": "MMM d, y",
+  "@dateLongPattern": {
+    "description": "intl DateFormat pattern for a date in another year."
+  },
+  "percentValue": "{value}%",
+  "@percentValue": {
+    "description": "A rounded percentage.",
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "commonAdultContent": "Adult content",
+  "@commonAdultContent": {
+    "description": "Screen reader label of the NSFW badge."
+  },
+  "appNotAThread": "This link isn't a Reddit thread",
+  "@appNotAThread": {
+    "description": "Snackbar when a shared link is not a thread."
+  },
+  "appSummaryReady": "Summary ready",
+  "@appSummaryReady": {
+    "description": "Snackbar."
+  },
+  "appView": "View",
+  "@appView": {
+    "description": "Snackbar action."
+  },
+  "appSummaryFailed": "The summary failed",
+  "@appSummaryFailed": {
+    "description": "Snackbar."
+  },
+  "appDetails": "Details",
+  "@appDetails": {
+    "description": "Snackbar action."
+  },
+  "homeNotAThread": "This link isn't a Reddit thread",
+  "@homeNotAThread": {
+    "description": "Field error."
+  },
+  "homeClipboardEmpty": "The clipboard is empty",
+  "@homeClipboardEmpty": {
+    "description": "Snackbar."
+  },
+  "homeSummaryDeleted": "Summary deleted",
+  "@homeSummaryDeleted": {
+    "description": "Snackbar."
+  },
+  "homeUndo": "Undo",
+  "@homeUndo": {
+    "description": "Snackbar action."
+  },
+  "homeShare": "Share",
+  "@homeShare": {
+    "description": "Menu item."
+  },
+  "homeDelete": "Delete",
+  "@homeDelete": {
+    "description": "Menu item and screen reader action."
+  },
+  "homeSettings": "Settings",
+  "@homeSettings": {
+    "description": "Tooltip."
+  },
+  "homeRecent": "Recent",
+  "@homeRecent": {
+    "description": "History header."
+  },
+  "homePasteLink": "Paste a link",
+  "@homePasteLink": {
+    "description": "Tooltip."
+  },
+  "homeUrlHint": "Paste a Reddit link",
+  "@homeUrlHint": {
+    "description": "URL field hint."
+  },
+  "homeSummarize": "Summarize",
+  "@homeSummarize": {
+    "description": "Button."
+  },
+  "homeAddKey": "Add your AI key to get started",
+  "@homeAddKey": {
+    "description": "Banner."
+  },
+  "homeSentiment": "Sentiment {sentiment}",
+  "@homeSentiment": {
+    "description": "Screen reader label of a history row's sentiment.",
+    "placeholders": {
+      "sentiment": {
+        "type": "String"
+      }
+    }
+  },
+  "homeEmptyTitle": "Summarize a thread in 3 steps",
+  "@homeEmptyTitle": {
+    "description": "Empty history title."
+  },
+  "homeEmptyStep1": "In Reddit, open a post",
+  "@homeEmptyStep1": {
+    "description": "Empty history step."
+  },
+  "homeEmptyStep2": "Tap Share",
+  "@homeEmptyStep2": {
+    "description": "Empty history step."
+  },
+  "homeEmptyStep3": "Choose TL;DR+",
+  "@homeEmptyStep3": {
+    "description": "Empty history step."
+  },
+  "homeEmptyIosHint": "Not in the list? Tap “More” and turn on TL;DR+.",
+  "@homeEmptyIosHint": {
+    "description": "iOS hint."
+  },
+  "homeSeeExample": "See an example",
+  "@homeSeeExample": {
+    "description": "Button."
+  },
+  "settingsModelFallback": "Model {from} unavailable, {to} used instead.",
+  "@settingsModelFallback": {
+    "description": "Snackbar.",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsClearTitle": "Clear history?",
+  "@settingsClearTitle": {
+    "description": "Dialog title."
+  },
+  "settingsClearBody": "All summaries saved on this phone will be deleted.",
+  "@settingsClearBody": {
+    "description": "Dialog body."
+  },
+  "settingsCancel": "Cancel",
+  "@settingsCancel": {
+    "description": "Dialog action."
+  },
+  "settingsClear": "Clear",
+  "@settingsClear": {
+    "description": "Dialog action."
+  },
+  "settingsCleared": "History cleared",
+  "@settingsCleared": {
+    "description": "Snackbar."
+  },
+  "settingsTitle": "Settings",
+  "@settingsTitle": {
+    "description": "Screen title."
+  },
+  "settingsProvider": "AI provider",
+  "@settingsProvider": {
+    "description": "Field label."
+  },
+  "settingsModel": "Model",
+  "@settingsModel": {
+    "description": "Field label."
+  },
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "Setting."
+  },
+  "settingsDeviceLanguage": "Device language",
+  "@settingsDeviceLanguage": {
+    "description": "Language choice: follow the device."
+  },
+  "settingsClearHistory": "Clear history",
+  "@settingsClearHistory": {
+    "description": "Setting."
+  },
+  "settingsVersion": "Version {version}",
+  "@settingsVersion": {
+    "description": "App version.",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "keyFormPrivacy": "Your key is stored only on this phone and is sent only to your AI provider.",
+  "@keyFormPrivacy": {
+    "description": "Privacy note."
+  },
+  "keyFormSave": "Save",
+  "@keyFormSave": {
+    "description": "Button."
+  },
+  "keyFormDeleteTitle": "Delete the {provider} key?",
+  "@keyFormDeleteTitle": {
+    "description": "Dialog title.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "keyFormCancel": "Cancel",
+  "@keyFormCancel": {
+    "description": "Dialog action."
+  },
+  "keyFormDelete": "Delete",
+  "@keyFormDelete": {
+    "description": "Dialog action."
+  },
+  "keyFormValid": "✓ Valid key",
+  "@keyFormValid": {
+    "description": "Result."
+  },
+  "keyFormRefused": "✗ Key refused by {provider}",
+  "@keyFormRefused": {
+    "description": "Result.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "keyFormUnverified": "Saved, not verified",
+  "@keyFormUnverified": {
+    "description": "Result."
+  },
+  "keyFormEmpty": "Paste your key before saving",
+  "@keyFormEmpty": {
+    "description": "Result."
+  },
+  "keyFormLabel": "{provider} API key",
+  "@keyFormLabel": {
+    "description": "Field label.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "keyFormHint": "Paste your key here",
+  "@keyFormHint": {
+    "description": "Field hint."
+  },
+  "keyFormShow": "Show key",
+  "@keyFormShow": {
+    "description": "Tooltip."
+  },
+  "keyFormHide": "Hide key",
+  "@keyFormHide": {
+    "description": "Tooltip."
+  },
+  "keyFormDeleteKey": "Delete key",
+  "@keyFormDeleteKey": {
+    "description": "Tooltip."
+  },
+  "keyFormPatternMismatch": "This doesn't look like a {provider} key.",
+  "@keyFormPatternMismatch": {
+    "description": "Hint.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "keyFormGetKey": "Get a {provider} key",
+  "@keyFormGetKey": {
+    "description": "Link.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "setupGeminiSubtitle": "Free tier available",
+  "@setupGeminiSubtitle": {
+    "description": "Provider subtitle."
+  },
+  "setupAnthropicSubtitle": "Claude, by Anthropic",
+  "@setupAnthropicSubtitle": {
+    "description": "Provider subtitle."
+  },
+  "setupOpenaiSubtitle": "GPT, by OpenAI",
+  "@setupOpenaiSubtitle": {
+    "description": "Provider subtitle."
+  },
+  "setupStep1": "Step 1 of 2",
+  "@setupStep1": {
+    "description": "Step."
+  },
+  "setupPitch": "Summarize any Reddit thread with your own AI.",
+  "@setupPitch": {
+    "description": "Pitch."
+  },
+  "setupChooseProvider": "Choose your provider",
+  "@setupChooseProvider": {
+    "description": "Section."
+  },
+  "setupContinue": "Continue",
+  "@setupContinue": {
+    "description": "Button."
+  },
+  "setupStep2": "Step 2 of 2",
+  "@setupStep2": {
+    "description": "Step."
+  },
+  "setupPasteKey": "Paste your {provider} key",
+  "@setupPasteKey": {
+    "description": "Title.",
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "setupVerify": "Verify",
+  "@setupVerify": {
+    "description": "Button."
+  },
+  "setupDone": "You're all set ✓",
+  "@setupDone": {
+    "description": "Success."
+  },
+  "summaryVerdictSemantics": "Sentiment {sentiment}. Emotions: {emotions}. {toxicity}.",
+  "@summaryVerdictSemantics": {
+    "description": "Screen reader label of the verdict line.",
+    "placeholders": {
+      "sentiment": {
+        "type": "String"
+      },
+      "emotions": {
+        "type": "String"
+      },
+      "toxicity": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryReadLess": "Read less",
+  "@summaryReadLess": {
+    "description": "Button."
+  },
+  "summaryReadMore": "Read more",
+  "@summaryReadMore": {
+    "description": "Button."
+  },
+  "summaryFetchingStep": "Fetching the thread…",
+  "@summaryFetchingStep": {
+    "description": "Loading step."
+  },
+  "summaryAnalyzingStep": "AI is analyzing…",
+  "@summaryAnalyzingStep": {
+    "description": "Loading step."
+  },
+  "summaryInProgress": "Summary in progress",
+  "@summaryInProgress": {
+    "description": "Screen reader label."
+  },
+  "summaryRedditThread": "Reddit thread",
+  "@summaryRedditThread": {
+    "description": "Loading header."
+  },
+  "summaryLongWait": "Long threads can take up to 30 s.",
+  "@summaryLongWait": {
+    "description": "Loading hint."
+  },
+  "summaryCancel": "Cancel",
+  "@summaryCancel": {
+    "description": "Button."
+  },
+  "summaryOpenSettings": "Open Settings",
+  "@summaryOpenSettings": {
+    "description": "Button."
+  },
+  "summaryRetryIn": "Try again in {time}",
+  "@summaryRetryIn": {
+    "description": "Countdown button.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryRetry": "Try again",
+  "@summaryRetry": {
+    "description": "Button."
+  },
+  "summaryBackHome": "Back to home",
+  "@summaryBackHome": {
+    "description": "Button."
+  },
+  "summaryModelFallback": "Model unavailable: the default model was used.",
+  "@summaryModelFallback": {
+    "description": "Snackbar."
+  },
+  "summaryRegenerateTitle": "Regenerate this summary?",
+  "@summaryRegenerateTitle": {
+    "description": "Dialog title."
+  },
+  "summaryRegenerateBody": "The French translation will be deleted.",
+  "@summaryRegenerateBody": {
+    "description": "Dialog body."
+  },
+  "summaryRegenerate": "Regenerate",
+  "@summaryRegenerate": {
+    "description": "Action."
+  },
+  "summaryCannotOpenReddit": "Couldn't open Reddit",
+  "@summaryCannotOpenReddit": {
+    "description": "Snackbar."
+  },
+  "summaryShare": "Share summary",
+  "@summaryShare": {
+    "description": "Tooltip."
+  },
+  "summaryOpenInReddit": "Open in Reddit",
+  "@summaryOpenInReddit": {
+    "description": "Tooltip."
+  },
+  "summaryMoreOptions": "More options",
+  "@summaryMoreOptions": {
+    "description": "Tooltip."
+  },
+  "summaryAnalyzingSemantics": "AI analysis in progress",
+  "@summaryAnalyzingSemantics": {
+    "description": "Screen reader label."
+  },
+  "summaryFetchingSemantics": "Fetching the thread",
+  "@summaryFetchingSemantics": {
+    "description": "Screen reader label."
+  },
+  "summaryDemoBanner": "Example: this summary doesn't use your key and isn't saved.",
+  "@summaryDemoBanner": {
+    "description": "Banner."
+  },
+  "summaryClose": "Close",
+  "@summaryClose": {
+    "description": "Banner action."
+  },
+  "summaryAlreadySummarized": "Already summarized {date}",
+  "@summaryAlreadySummarized": {
+    "description": "Banner; date is relative (2 days ago) or summaryBannerOnDate.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryBannerOnDate": "on {date}",
+  "@summaryBannerOnDate": {
+    "description": "An absolute date in the banner.",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryInShort": "In short",
+  "@summaryInShort": {
+    "description": "Section."
+  },
+  "summaryViewpoints": "Viewpoints",
+  "@summaryViewpoints": {
+    "description": "Section."
+  },
+  "summaryStats": "{score} points · {percent} upvoted · {comments} comments",
+  "@summaryStats": {
+    "description": "Thread stats.",
+    "placeholders": {
+      "score": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      },
+      "comments": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryCommentsAnalyzed": "{analyzed} of {total} comments analyzed · {model}",
+  "@summaryCommentsAnalyzed": {
+    "description": "Footer.",
+    "placeholders": {
+      "analyzed": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      },
+      "model": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryAiTake": "The AI's take",
+  "@summaryAiTake": {
+    "description": "Section."
+  },
+  "summaryTranslateToFrench": "Translate to French",
+  "@summaryTranslateToFrench": {
+    "description": "Button (French app only)."
+  },
+  "summaryOriginal": "Original ({code})",
+  "@summaryOriginal": {
+    "description": "Segment: original language.",
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "summaryFrench": "FR",
+  "@summaryFrench": {
+    "description": "Segment: French translation."
+  }
+}
