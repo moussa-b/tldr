@@ -54,4 +54,17 @@ void main() {
     expect(isShortLink('https://www.reddit.com/r/france/comments/1abc23d/x/'), isFalse);
     expect(isShortLink('https://www.reddit.com/r/france/'), isFalse);
   });
+
+  test('isCommentPermalink: a link to one comment, not to the thread', () {
+    expect(
+        isCommentPermalink(
+            'https://www.reddit.com/r/hermesagent/comments/1x943dw/comment/phw1yvo/'),
+        isTrue);
+    expect(isCommentPermalink('https://www.reddit.com/r/france/comments/1abc23d/titre/def45g6/'),
+        isTrue);
+    expect(isCommentPermalink('https://www.reddit.com/r/france/comments/1abc23d/titre/?sort=top'),
+        isFalse);
+    expect(isCommentPermalink('https://www.reddit.com/comments/1abc23d/?sort=top'), isFalse);
+    expect(isCommentPermalink('https://www.reddit.com/r/france/'), isFalse);
+  });
 }

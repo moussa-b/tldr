@@ -9,26 +9,34 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../core/errors.dart';
 import '../../core/reddit_url.dart';
 import 'reddit_client.dart';
+import 'thread_script.dart';
 
-/// A `.json` response read from inside the page.
+/// The thread read from inside the page, in the shape of Reddit's `.json`.
 typedef ListingBody = ({int status, String text});
 
-/// One Reddit thread opened in a WebView, from which the `.json` listing is
-/// read. The Summary screen shows it while the thread loads; without a screen
-/// it runs offscreen.
+/// One Reddit thread opened in a WebView, from which the thread is read. The
+/// Summary screen shows it while the thread loads; without a screen it runs
+/// offscreen.
 ///
-/// Reddit answers anonymous `.json` requests with 403 unless the client first
-/// ran the JavaScript check served with its pages, which a WebView does like
-/// any browser. The listing is then fetched from the page, with the cookies
-/// Reddit just set.
+/// Reddit serves its pages only once the client ran the JavaScript check
+/// they come with, which a WebView does like any browser. The thread is then
+/// read from the page by [threadScript], with the cookies Reddit just set.
+///
+/// The page asks for Reddit's desktop site: to anonymous phones, Reddit only
+/// serves a handful of comments and no way to load the rest.
 class RedditPage {
   RedditPage() {
+    _ready = controller
+        .getUserAgent()
+        .then((ua) => desktopUserAgent(ua ?? ''), onError: (Object _) => desktopUserAgent(''))
+        .then(controller.setUserAgent)
+        .catchError((Object _) {});
     controller
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel(_channel, onMessageReceived: _onListing)
       ..setNavigationDelegate(NavigationDelegate(
         onNavigationRequest: _onNavigationRequest,
-        // A navigation drops any fetch the previous page started.
+        // A navigation drops any script the previous page started.
         onPageStarted: (url) {
           _pageUrl = url;
           _busy = false;
@@ -37,10 +45,15 @@ class RedditPage {
         onProgress: (_) => _hideConsentSheet(),
         onPageFinished: (url) {
           _pageUrl = url;
+          // On iOS the previous page's script may have died unanswered.
+          _busy = false;
           _hideConsentSheet();
           _tryListing();
         },
         onWebResourceError: (error) {
+          // A navigation this page stopped (a comment's permalink) is not a
+          // network error: NSURLErrorCancelled, WebKit's interrupted load.
+          if (error.errorCode == -999 || error.errorCode == 102) return;
           if (error.isForMainFrame ?? false) {
             _finish(
                 error: const ApiError(
@@ -58,10 +71,15 @@ class RedditPage {
   static const _channel = 'TldrListing';
 
   /// Any script on the page can call the channel: only messages carrying this
-  /// page's nonce are our fetch's answer.
-  final _nonce = List.generate(16, (_) => Random.secure().nextInt(16).toRadixString(16)).join();
+  /// listing's nonce are [threadScript]'s answer, so a late answer for an
+  /// earlier listing is dropped too.
+  var _nonce = '';
+
+  /// The desktop user agent is set before the first page loads.
+  late final Future<void> _ready;
 
   Completer<ListingBody>? _done;
+  DateTime? _deadline;
   Timer? _timeout;
   Timer? _ticker;
   String? _pageUrl;
@@ -75,6 +93,8 @@ class RedditPage {
     _finish(error: ApiError.cancelled);
     _done?.future.ignore();
     final done = _done = Completer<ListingBody>();
+    _nonce = List.generate(16, (_) => Random.secure().nextInt(16).toRadixString(16)).join();
+    _deadline = DateTime.now().add(timeout);
     _postId = extractPostId(start);
     _lastStatus = 0;
     _busy = false;
@@ -97,7 +117,11 @@ class RedditPage {
       _hideConsentSheet();
       _tryListing();
     });
-    controller.loadRequest(Uri.parse(start)).catchError((Object _) => _finish(
+    _ready
+        .then((_) => identical(_done, done) && !done.isCompleted
+            ? controller.loadRequest(Uri.parse(start))
+            : null)
+        .catchError((Object _) => _finish(
         error: const ApiError(
             code: 'REDDIT_UNAVAILABLE', message: 'WebView failed', retryable: true)));
     return done.future;
@@ -110,7 +134,9 @@ class RedditPage {
   }
 
   /// Keeps the page on this thread: Reddit's check reloads it, a short link
-  /// redirects to it, anything else (links, « open in app ») is blocked.
+  /// redirects to it, anything else (links, « open in app ») is blocked. A
+  /// comment's permalink shows only that comment's replies: the whole thread
+  /// is opened instead.
   NavigationDecision _onNavigationRequest(NavigationRequest request) {
     if (request.url == 'about:blank') return NavigationDecision.navigate;
     final uri = Uri.tryParse(request.url);
@@ -119,9 +145,20 @@ class RedditPage {
         uri.scheme == 'https' &&
         (host == 'reddit.com' || host.endsWith('.reddit.com'));
     if (!onReddit) return NavigationDecision.prevent;
-    if (!request.isMainFrame || _postId == null) return NavigationDecision.navigate;
+    if (!request.isMainFrame) return NavigationDecision.navigate;
     final id = extractPostId(request.url);
-    return id == null || id == _postId
+    // A short link may redirect to a comment, before the post id is known.
+    if (id != null && (_postId == null || id == _postId) && isCommentPermalink(request.url)) {
+      _postId = id;
+      // After this navigation is stopped, not from inside its decision.
+      Timer(Duration.zero, () {
+        unawaited(controller
+            .loadRequest(Uri.parse('https://www.reddit.com/comments/$id/?sort=top'))
+            .catchError((_) {}));
+      });
+      return NavigationDecision.prevent;
+    }
+    return _postId == null || id == null || id == _postId
         ? NavigationDecision.navigate
         : NavigationDecision.prevent;
   }
@@ -144,12 +181,13 @@ class RedditPage {
     if (_busy || done == null || done.isCompleted || id == null) return;
     _postId = id;
     _busy = true;
-    final path = jsonEncode('/comments/$id.json?sort=top&limit=500&depth=4&raw_json=1');
-    final script = 'fetch($path, {credentials: "include"})'
-        '.then(r => r.text().then(t => $_channel.postMessage('
-        'JSON.stringify({nonce: "$_nonce", status: r.status, text: t}))))'
-        '.catch(() => $_channel.postMessage('
-        'JSON.stringify({nonce: "$_nonce", status: 0, text: ""})));';
+    // Room left for the answer to cross the channel before the timeout.
+    final deadline = _deadline!.subtract(const Duration(milliseconds: 1500));
+    final script = threadScript(
+        channel: _channel,
+        nonce: _nonce,
+        postId: id,
+        deadlineMs: deadline.millisecondsSinceEpoch);
     unawaited(controller.runJavaScript(script).catchError((_) => _busy = false));
   }
 
@@ -164,11 +202,16 @@ class RedditPage {
     _busy = false;
     final status = (value['status'] as num?)?.toInt() ?? 0;
     final text = value['text'] as String? ?? '';
-    if (status == 0) return;
+    // The post is there: an earlier 403 was Reddit's check, not a refusal.
+    if (status == 1) _lastStatus = 0;
+    if (status <= 1) return;
     _lastStatus = status;
-    // An HTML answer (403, or a 200 interstitial) means Reddit's check has not
-    // passed yet: the next try runs once the check has reloaded the page.
+    // A 403 without a listing is Reddit's check, or Reddit refusing the read:
+    // the next try runs once the check has reloaded the page, and the timeout
+    // reports a refusal.
     if (!_looksLikeJson(text)) return;
+    final failed = (value['failed'] as num?)?.toInt() ?? 0;
+    if (failed > 0) debugPrint('RedditPage: $failed « more comments » blocks not loaded');
     _finish(result: (status: status, text: text));
   }
 
@@ -185,6 +228,22 @@ class RedditPage {
       listed.value = result.status == 200;
     }
   }
+}
+
+/// The WebView's own user agent ([mobile]) as the desktop browser of the same
+/// engine and version: Safari on a Mac for WebKit, Chrome on Linux for
+/// Chromium.
+@visibleForTesting
+String desktopUserAgent(String mobile) {
+  final chrome = RegExp(r'Chrome/(\d+)').firstMatch(mobile)?.group(1);
+  if (chrome != null) {
+    return 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 '
+        '(KHTML, like Gecko) Chrome/$chrome.0.0.0 Safari/537.36';
+  }
+  final ios = RegExp(r'OS (\d+)_(\d+)').firstMatch(mobile);
+  final safari = ios == null ? '18.6' : '${ios.group(1)}.${ios.group(2)}';
+  return 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 '
+      '(KHTML, like Gecko) Version/$safari Safari/605.1.15';
 }
 
 bool _looksLikeJson(String text) {

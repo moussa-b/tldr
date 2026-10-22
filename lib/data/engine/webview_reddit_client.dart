@@ -7,8 +7,9 @@ import '../../core/reddit_url.dart';
 import 'reddit_client.dart';
 import 'reddit_page.dart';
 
-/// Reads a thread's public `.json` listing through a [RedditPage]: the one the
-/// Summary screen shows if [host] has one, an offscreen page otherwise.
+/// Reads a thread, in the shape of Reddit's `.json`, through a [RedditPage]:
+/// the one the Summary screen shows if [host] has one, an offscreen page
+/// otherwise.
 class WebViewRedditClient implements RedditClient {
   WebViewRedditClient({this.host, this.timeout = const Duration(seconds: 25)});
 
@@ -28,7 +29,7 @@ class WebViewRedditClient implements RedditClient {
           code: 'UNSUPPORTED_URL', message: 'Not a post URL', retryable: false);
     }
     // Short `/s/` links are opened as is: the WebView follows the redirect.
-    final start = id == null ? link : 'https://www.reddit.com/comments/$id/';
+    final start = id == null ? link : 'https://www.reddit.com/comments/$id/?sort=top';
     final shared = host?.visible;
     final page = shared ?? RedditPage();
     try {
@@ -40,8 +41,9 @@ class WebViewRedditClient implements RedditClient {
   }
 }
 
-/// Maps a `.json` response to the listing, or to the same errors as
-/// the spec (404 → not found, JSON 403 → closed thread, HTML 403 → blocked).
+/// Maps the page's answer, in the shape of Reddit's `.json`, to the listing, or
+/// to the same errors as the spec (404 → not found, JSON 403 → closed thread,
+/// HTML 403 → blocked).
 List<dynamic> decodeListingBody(int status, String text) {
   final Object? data;
   try {
