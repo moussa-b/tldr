@@ -2,6 +2,12 @@
 
 Toutes les versions notables de TL;DR+. La version de l'app (`pubspec.yaml`) suit les trois premiers chiffres de `VERSION`.
 
+## [1.0.2.0] - 2026-10-22
+
+### Fixed
+- Les résumés fonctionnent de nouveau. Reddit refuse désormais la lecture anonyme des threads par son format de données : TL;DR+ lit maintenant le thread directement sur sa page, avec ses commentaires et leurs réponses.
+- Un lien partagé vers un commentaire précis résume tout le thread, et pas seulement les réponses à ce commentaire.
+
 ## [1.0.1.0] - 2026-10-12
 
 ### Changed
