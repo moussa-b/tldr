@@ -8,8 +8,9 @@ void main() {
   Map<String, dynamic> arb(String lang) =>
       jsonDecode(File('lib/l10n/app_$lang.arb').readAsStringSync()) as Map<String, dynamic>;
   Iterable<String> keys(Map<String, dynamic> m) => m.keys.where((k) => !k.startsWith('@'));
-  List<String> placeholders(String text) =>
-      RegExp(r'\{(\w+)\}').allMatches(text).map((m) => m.group(1)!).toList()..sort();
+  // Plain `{name}` and ICU `{name, plural, ...}` arguments.
+  Set<String> placeholders(String text) =>
+      RegExp(r'\{(\w+)[,}]').allMatches(text).map((m) => m.group(1)!).toSet();
 
   // protects=every text exists in every language with the same placeholders;
   // fails_when=a key or a {placeholder} is missing in one language; no_claim=the wording.

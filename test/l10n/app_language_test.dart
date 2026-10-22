@@ -36,6 +36,9 @@ void main() {
           const Locale('fr'));
       expect(resolveAppLocale(const FixedLanguage(Locale('en')), const [Locale('fr', 'FR')]),
           const Locale('en'));
+      // A fixed language the app no longer has follows the device.
+      expect(resolveAppLocale(const FixedLanguage(Locale('de')), const [Locale('fr', 'FR')]),
+          const Locale('fr'));
     });
 
     // Spec criterion 8: a language added to the ARB files is picked up without code changes.
@@ -66,6 +69,45 @@ void main() {
         await deps.settings.setAppLanguage(language);
         expect(await deps.settings.appLanguage(), language);
       }
+    });
+  });
+
+  // protects=1.0.x users (French only) keep French after the update; fails_when=an upgrader on
+  // an English phone is switched to English, or a new install is forced to French;
+  // no_claim=the platform's device languages.
+  group('SettingsRepository.appLanguageAtStartup', () {
+    Future<void> addSummary(TestDeps deps) async => deps.dao.upsert(
+        SummaryResult.fromJson(
+            jsonDecode(await fileFixture('summary_en_long.json')) as Map<String, dynamic>),
+        sourceUrl: 'https://redd.it/1xyz98q');
+
+    test('a new install follows the device', () async {
+      final deps = await testDeps();
+      expect(await deps.settings.appLanguageAtStartup(const [Locale('en', 'US')]),
+          AppLanguage.system);
+    });
+
+    test('an upgrade on a non-French phone keeps French, once and for all', () async {
+      final deps = await testDeps();
+      await addSummary(deps);
+      expect(await deps.settings.appLanguageAtStartup(const [Locale('en', 'US')]),
+          const FixedLanguage(Locale('fr')));
+      expect(await deps.settings.appLanguage(), const FixedLanguage(Locale('fr')));
+    });
+
+    test('an upgrade on a French phone keeps following the device', () async {
+      final deps = await testDeps();
+      await addSummary(deps);
+      expect(await deps.settings.appLanguageAtStartup(const [Locale('fr', 'FR')]),
+          AppLanguage.system);
+    });
+
+    test('a stored choice wins', () async {
+      final deps = await testDeps();
+      await addSummary(deps);
+      await deps.settings.setAppLanguage(AppLanguage.system);
+      expect(await deps.settings.appLanguageAtStartup(const [Locale('en', 'US')]),
+          AppLanguage.system);
     });
   });
 

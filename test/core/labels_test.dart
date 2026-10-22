@@ -36,7 +36,7 @@ void main() {
     test('labels by age in English', () {
       expect(relativeDate(now.subtract(const Duration(seconds: 20)), en, now: now), 'just now');
       expect(relativeDate(now.subtract(const Duration(minutes: 5)), en, now: now), '5 min ago');
-      expect(relativeDate(DateTime(2026, 10, 11, 7), en, now: now), '3 h ago');
+      expect(relativeDate(DateTime(2026, 10, 11, 7), en, now: now), '3h ago');
       expect(relativeDate(DateTime(2026, 10, 10, 23), en, now: now), 'yesterday');
       expect(relativeDate(DateTime(2026, 10, 9, 22), en, now: now), '2 days ago');
       expect(relativeDate(DateTime(2026, 10, 3), en, now: now), 'Oct 3');
@@ -49,6 +49,16 @@ void main() {
       expect(isAbsoluteDate(DateTime(2026, 10, 4, 12), now: now), isTrue);
       expect(isAbsoluteDate(now.subtract(const Duration(minutes: 5)), now: now), isFalse);
     });
+  });
+
+  // protects=« Déjà résumé le 3 oct. » / « Already summarized on Oct 3 » for old dates only;
+  // fails_when=the prefix is dropped or added to a relative date; no_claim=the banner layout.
+  test('the already-summarized banner date', () {
+    final now = DateTime(2026, 10, 11, 10, 55);
+    expect(bannerDate(DateTime(2026, 10, 9, 22), fr, now: now), 'il y a 2 jours');
+    expect(bannerDate(DateTime(2026, 10, 3), fr, now: now), 'le 3 oct.');
+    expect(bannerDate(DateTime(2026, 10, 9, 22), en, now: now), '2 days ago');
+    expect(bannerDate(DateTime(2026, 10, 3), en, now: now), 'on Oct 3');
   });
 
   // protects=English labels and number formats; fails_when=a French label or format shows in

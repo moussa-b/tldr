@@ -31,13 +31,15 @@ class LanguagePicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final languages = [
       for (final locale in locales) FixedLanguage(Locale(locale.languageCode)),
-    ]..sort((a, b) => nameOf(a.locale).compareTo(nameOf(b.locale)));
+    ]..sort((a, b) => nameOf(a.locale).toLowerCase().compareTo(nameOf(b.locale).toLowerCase()));
     return RadioGroup<AppLanguage>(
       groupValue: selected,
       onChanged: (value) {
         if (value != null) onSelected(value);
       },
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
+      // Scrolls when the languages or the text size outgrow the sheet.
+      child: SingleChildScrollView(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
         RadioListTile<AppLanguage>(
           value: AppLanguage.system,
           title: Text(context.l10n.settingsDeviceLanguage, style: context.text.body),
@@ -47,7 +49,7 @@ class LanguagePicker extends StatelessWidget {
             value: language,
             title: Text(nameOf(language.locale), style: context.text.body),
           ),
-      ]),
+      ])),
     );
   }
 }

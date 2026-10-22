@@ -289,7 +289,7 @@
       }
     }
   },
-  "relativeHours": "{count} h ago",
+  "relativeHours": "{count}h ago",
   "@relativeHours": {
     "description": "Hours ago, same day.",
     "placeholders": {
@@ -778,15 +778,21 @@
   "@summaryViewpoints": {
     "description": "Section."
   },
-  "summaryStats": "{score} points · {percent} upvoted · {comments} comments",
+  "summaryStats": "{scoreCount, plural, =1{{score} point} other{{score} points}} · {percent} upvoted · {commentCount, plural, =1{{comments} comment} other{{comments} comments}}",
   "@summaryStats": {
-    "description": "Thread stats.",
+    "description": "Thread stats; score and comments are already formatted, the counts pick the plural.",
     "placeholders": {
+      "scoreCount": {
+        "type": "int"
+      },
       "score": {
         "type": "String"
       },
       "percent": {
         "type": "String"
+      },
+      "commentCount": {
+        "type": "int"
       },
       "comments": {
         "type": "String"

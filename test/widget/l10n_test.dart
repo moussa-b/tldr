@@ -86,6 +86,7 @@ void main() {
   // fails_when=a French device shows English or a Spanish one shows French;
   // no_claim=the OS per-app language setting (checked by hand).
   testWidgets('the device language decides in « Device language » mode', (tester) async {
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     for (final (device, expected) in [
       (const Locale('fr', 'CA'), 'Résume un thread en 3 gestes'),
       (const Locale('es', 'ES'), 'Summarize a thread in 3 steps'),
@@ -99,17 +100,68 @@ void main() {
     }
   });
 
-  // protects=a language added to the ARB files shows up in the picker (criterion 8);
-  // fails_when=the picker hard-codes its languages; no_claim=the added language's texts.
+  // protects=a device language change while the app runs switches it, and wins over a
+  // language chosen in the app; fails_when=the observer is not wired or the in-app choice
+  // ignores the system; no_claim=what each platform reports.
+  testWidgets('a device language change while running switches the app', (tester) async {
+    final deps = await tester.runAsync(() => testDeps(language: AppLanguage.system));
+    tester.platformDispatcher.localesTestValue = const [Locale('en', 'US')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    await pumpApp(tester, deps!);
+    expect(find.text('Summarize a thread in 3 steps'), findsOneWidget);
+    tester.platformDispatcher.localesTestValue = const [Locale('fr', 'FR')];
+    await settle(tester);
+    expect(find.text('Résume un thread en 3 gestes'), findsOneWidget);
+    await _tearDownApp(tester);
+
+    final fixed = await tester.runAsync(() => testDeps(language: _en));
+    tester.platformDispatcher.localesTestValue = const [Locale('en', 'US')];
+    await pumpApp(tester, fixed!);
+    expect(find.text('Summarize a thread in 3 steps'), findsOneWidget);
+    tester.platformDispatcher.localesTestValue = const [Locale('fr', 'FR')];
+    await settle(tester);
+    expect(find.text('Résume un thread en 3 gestes'), findsOneWidget);
+    expect(await tester.runAsync(fixed.settings.appLanguage), AppLanguage.system);
+    await _tearDownApp(tester);
+  });
+
+  // protects=a language added to the ARB files shows up in the picker, sorted by name, and a
+  // tap returns that language (criterion 8); fails_when=the picker hard-codes or misorders its
+  // languages; no_claim=the added language's texts.
   testWidgets('the picker lists the device option plus every language', (tester) async {
+    AppLanguage? picked;
     await tester.pumpWidget(localized(Scaffold(
       body: LanguagePicker(
         selected: AppLanguage.system,
-        onSelected: (_) {},
-        locales: const [Locale('en'), Locale('fr'), Locale('de')],
+        onSelected: (language) => picked = language,
+        locales: const [Locale('fr'), Locale('en'), Locale('de')],
       ),
     )));
-    expect(find.byType(RadioListTile<AppLanguage>), findsNWidgets(4));
+    final titles = [
+      for (final tile in tester.widgetList<RadioListTile<AppLanguage>>(
+          find.byType(RadioListTile<AppLanguage>)))
+        (tile.title! as Text).data,
+    ];
+    expect(titles, ['Langue de l\'appareil', 'de', 'English', 'Français']);
+    await tester.tap(find.text('English'));
+    expect(picked, const FixedLanguage(Locale('en')));
+  });
+
+  // protects=the English app does not warn about a translation it never shows;
+  // fails_when=« The French translation will be deleted » shows in English; no_claim=the
+  // regeneration itself.
+  testWidgets('regenerating in English asks nothing about the translation', (tester) async {
+    final deps = await tester.runAsync(() => testDeps(language: _en));
+    await tester.runAsync(() => _storeEnglishThread(deps!, translated: true));
+    await pumpApp(tester, deps!);
+    await tester.tap(find.byType(Dismissible).first);
+    await settle(tester, rounds: 30);
+    await tester.tap(find.byTooltip('More options'));
+    await settle(tester);
+    await tester.tap(find.text('Regenerate'));
+    await settle(tester);
+    expect(find.text('Regenerate this summary?'), findsNothing);
+    await _tearDownApp(tester);
   });
 
   // protects=« Traduire en français » in the French app only (criteria 4, 5); fails_when=the
@@ -162,6 +214,22 @@ void main() {
     await settle(tester, rounds: 40);
     expect(find.textContaining('Example: this summary'), findsOneWidget);
     expect(find.text('What do you think of the 4-day work week?'), findsOneWidget);
+    await _tearDownApp(tester);
+  });
+
+  // protects=the example follows a language change made while it is on screen;
+  // fails_when=a French example stays under an English app or the reverse; no_claim=none.
+  testWidgets('the example follows a language change on screen', (tester) async {
+    final deps = await tester.runAsync(() => testDeps(language: AppLanguage.system));
+    tester.platformDispatcher.localesTestValue = const [Locale('en', 'US')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    await pumpApp(tester, deps!);
+    await tester.tap(find.text('See an example'));
+    await settle(tester, rounds: 40);
+    expect(find.text('What do you think of the 4-day work week?'), findsOneWidget);
+    tester.platformDispatcher.localesTestValue = const [Locale('fr', 'FR')];
+    await settle(tester, rounds: 40);
+    expect(find.text('Votre avis sur la semaine de 4 jours ?'), findsOneWidget);
     await _tearDownApp(tester);
   });
 

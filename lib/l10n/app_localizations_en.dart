@@ -229,7 +229,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String relativeHours(String count) {
-    return '$count h ago';
+    return '${count}h ago';
   }
 
   @override
@@ -569,8 +569,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryViewpoints => 'Viewpoints';
 
   @override
-  String summaryStats(String score, String percent, String comments) {
-    return '$score points · $percent upvoted · $comments comments';
+  String summaryStats(
+    int scoreCount,
+    String score,
+    String percent,
+    int commentCount,
+    String comments,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      scoreCount,
+      locale: localeName,
+      other: '$score points',
+      one: '$score point',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      commentCount,
+      locale: localeName,
+      other: '$comments comments',
+      one: '$comments comment',
+    );
+    return '$_temp0 · $percent upvoted · $_temp1';
   }
 
   @override

@@ -66,7 +66,7 @@ int _calendarDays(DateTime date, DateTime now) {
 bool isAbsoluteDate(DateTime date, {DateTime? now}) =>
     _calendarDays(date, now ?? DateTime.now()) >= 7;
 
-/// « il y a 14 h », « hier », « 3 oct. » (or « 14 h ago », « yesterday », « Oct 3 »).
+/// « il y a 14 h », « hier », « 3 oct. » (or « 14h ago », « yesterday », « Oct 3 »).
 String relativeDate(DateTime date, AppLocalizations l, {DateTime? now}) {
   final current = now ?? DateTime.now();
   final local = date.toLocal();
@@ -84,6 +84,13 @@ String relativeDate(DateTime date, AppLocalizations l, {DateTime? now}) {
   final sameYear = local.year == current.year;
   return DateFormat(sameYear ? l.dateShortPattern : l.dateLongPattern, l.localeName)
       .format(local);
+}
+
+/// The date in « Déjà résumé … »: « il y a 2 jours », or « le 3 oct. » for an
+/// older one (« 2 days ago », « on Oct 3 »).
+String bannerDate(DateTime date, AppLocalizations l, {DateTime? now}) {
+  final label = relativeDate(date, l, now: now);
+  return isAbsoluteDate(date, now: now) ? l.summaryBannerOnDate(label) : label;
 }
 
 String compactNumber(int value, AppLocalizations l) =>

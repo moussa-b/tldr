@@ -573,8 +573,24 @@ class AppLocalizationsFr extends AppLocalizations {
   String get summaryViewpoints => 'Points de vue';
 
   @override
-  String summaryStats(String score, String percent, String comments) {
-    return '$score points · $percent upvotés · $comments commentaires';
+  String summaryStats(
+    int scoreCount,
+    String score,
+    String percent,
+    int commentCount,
+    String comments,
+  ) {
+    String _temp0 = intl.Intl.pluralLogic(
+      scoreCount,
+      locale: localeName,
+      other: '$score points',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      commentCount,
+      locale: localeName,
+      other: '$comments commentaires',
+    );
+    return '$_temp0 · $percent upvotés · $_temp1';
   }
 
   @override

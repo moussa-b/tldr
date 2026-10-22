@@ -121,9 +121,10 @@ class AppLanguageNotifier extends Notifier<AppLanguage> {
   @override
   AppLanguage build() => ref.read(initialAppLanguageProvider);
 
+  /// Saved first: a choice that could not be saved is not shown either.
   Future<void> set(AppLanguage language) async {
-    state = language;
     await ref.read(settingsProvider).setAppLanguage(language);
+    state = language;
   }
 }
 

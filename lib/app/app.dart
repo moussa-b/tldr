@@ -11,6 +11,7 @@ import '../l10n/app_localizations.dart';
 import 'providers.dart';
 import 'router.dart';
 import 'theme.dart';
+import '../l10n/app_language.dart';
 
 final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -57,10 +58,18 @@ class _TldrAppState extends ConsumerState<TldrApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  /// The device's language changed while the app runs.
+  /// The device's language changed while the app runs. A language chosen in
+  /// the system settings (for this app or for the whole phone) is the latest
+  /// choice: it wins over the one made in the app.
   @override
-  void didChangeLocales(List<Locale>? locales) =>
-      ref.read(deviceLocalesProvider.notifier).update(locales ?? const []);
+  void didChangeLocales(List<Locale>? locales) {
+    if (locales == null || locales.isEmpty) return;
+    ref.read(deviceLocalesProvider.notifier).update(locales);
+    if (ref.read(appLanguageProvider) is FixedLanguage) {
+      unawaited(
+          ref.read(appLanguageProvider.notifier).set(AppLanguage.system).catchError((Object _) {}));
+    }
+  }
 
   void _onShared(String text) {
     final url = extractRedditUrl(text);

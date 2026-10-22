@@ -497,7 +497,7 @@ abstract class AppLocalizations {
   /// Hours ago, same day.
   ///
   /// In en, this message translates to:
-  /// **'{count} h ago'**
+  /// **'{count}h ago'**
   String relativeHours(String count);
 
   /// The day before.
@@ -1098,11 +1098,17 @@ abstract class AppLocalizations {
   /// **'Viewpoints'**
   String get summaryViewpoints;
 
-  /// Thread stats.
+  /// Thread stats; score and comments are already formatted, the counts pick the plural.
   ///
   /// In en, this message translates to:
-  /// **'{score} points · {percent} upvoted · {comments} comments'**
-  String summaryStats(String score, String percent, String comments);
+  /// **'{scoreCount, plural, =1{{score} point} other{{score} points}} · {percent} upvoted · {commentCount, plural, =1{{comments} comment} other{{comments} comments}}'**
+  String summaryStats(
+    int scoreCount,
+    String score,
+    String percent,
+    int commentCount,
+    String comments,
+  );
 
   /// Footer.
   ///

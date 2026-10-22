@@ -30,13 +30,14 @@ class HomeScreen extends ConsumerStatefulWidget {
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
-  String? _fieldError;
+  /// The field holds something that is not a Reddit thread link.
+  bool _notAThread = false;
   bool _hasKey = true;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() => setState(() => _fieldError = null));
+    _controller.addListener(() => setState(() => _notAThread = false));
     _scroll.addListener(() {
       if (_scroll.position.pixels > _scroll.position.maxScrollExtent - 300) {
         ref.read(historyProvider.notifier).loadMore();
@@ -70,7 +71,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (value.isEmpty) return;
     final url = extractRedditUrl(value);
     if (url == null) {
-      setState(() => _fieldError = context.l10n.homeNotAThread);
+      setState(() => _notAThread = true);
       return;
     }
     _controller.clear();
@@ -91,7 +92,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (extractRedditUrl(text) != null) {
       _submit(text);
     } else {
-      setState(() => _fieldError = context.l10n.homeNotAThread);
+      setState(() => _notAThread = true);
     }
   }
 
@@ -269,12 +270,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
         ),
-        if (_fieldError != null)
+        if (_notAThread)
           Padding(
             padding: const EdgeInsets.only(top: Tokens.xs),
             child: Semantics(
               liveRegion: true,
-              child: Text(_fieldError!,
+              child: Text(context.l10n.homeNotAThread,
                   style: context.text.caption.copyWith(color: scheme.error)),
             ),
           ),

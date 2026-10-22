@@ -166,7 +166,7 @@
   "summaryBannerOnDate": "le {date}",
   "summaryInShort": "En bref",
   "summaryViewpoints": "Points de vue",
-  "summaryStats": "{score} points · {percent} upvotés · {comments} commentaires",
+  "summaryStats": "{scoreCount, plural, other{{score} points}} · {percent} upvotés · {commentCount, plural, other{{comments} commentaires}}",
   "summaryCommentsAnalyzed": "{analyzed} commentaires analysés sur {total} · {model}",
   "summaryAiTake": "L'avis de l'IA",
   "summaryTranslateToFrench": "Traduire en français",

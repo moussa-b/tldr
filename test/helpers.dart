@@ -22,6 +22,7 @@ import 'package:tldr/features/share/share_intent_source.dart';
 import 'fake_tldr_api.dart';
 import 'package:tldr/l10n/app_language.dart';
 import 'package:tldr/l10n/app_localizations.dart';
+import 'package:flutter/services.dart';
 
 /// A test fixture (test/fixtures), or the demo summary.
 Future<String> fileFixture(String name) => File(
@@ -81,6 +82,8 @@ Future<TestDeps> testDeps(
 Future<FakeShareIntentSource> pumpApp(WidgetTester tester, TestDeps deps,
     {String? initialShare}) async {
   HomeScreen.setupShownThisLaunch = false;
+  // An asset load cached by an earlier test never completes in this one.
+  rootBundle.clear();
   final share = FakeShareIntentSource(initialText: initialShare);
   await tester.pumpWidget(ProviderScope(
     overrides: deps.overrides,

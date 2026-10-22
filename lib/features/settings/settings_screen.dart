@@ -101,7 +101,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
-    if (chosen != null) await ref.read(appLanguageProvider.notifier).set(chosen);
+    if (chosen == null) return;
+    try {
+      await ref.read(appLanguageProvider.notifier).set(chosen);
+    } on Exception {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(context.l10n.errorGenericTitle)));
+      }
+    }
   }
 
   String _languageLabel(AppLanguage language) => switch (language) {

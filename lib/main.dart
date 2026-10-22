@@ -8,6 +8,7 @@ import 'app/app.dart';
 import 'app/providers.dart';
 import 'data/db/app_database.dart';
 import 'data/settings/settings_repository.dart';
+import 'l10n/app_language.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,7 +20,10 @@ Future<void> main() async {
   });
   await initializeDateFormatting();
   final database = await AppDatabase.open();
-  final language = await SettingsRepository(database.db).appLanguage();
+  // The language is only a preference: a failed read follows the device.
+  final language = await SettingsRepository(database.db)
+      .appLanguageAtStartup(WidgetsBinding.instance.platformDispatcher.locales)
+      .catchError((Object _) => AppLanguage.system);
   runApp(ProviderScope(
     overrides: [
       databaseProvider.overrideWithValue(database),

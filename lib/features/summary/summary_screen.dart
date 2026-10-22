@@ -59,7 +59,10 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
   bool _loading = false;
   bool _regenerating = false;
   bool _translating = false;
-  String? _translationError;
+  ApiError? _translationError;
+
+  /// The language the example was loaded in (demo mode).
+  String? _demoLanguage;
   DateTime? _duplicateOf;
   String _modelName = '';
   ApiCancelToken? _cancelToken;
@@ -89,24 +92,38 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
         }
         _show(entry);
       case SummaryMode.demo:
-        final raw = await _demoSummary(context.appLanguageCode);
-        final result = SummaryResult.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-        _show(SummaryEntry(
-          id: 'demo',
-          sourceUrl: result.thread.permalink,
-          thread: result.thread,
-          provider: result.meta.provider,
-          model: result.meta.model,
-          analysis: result.analysis,
-          analysisFr: null,
-          displayLang: 'orig',
-          commentsAnalyzed: result.meta.commentsAnalyzed,
-          commentsTotal: result.meta.commentsTotal,
-          createdAt: DateTime.now(),
-        ));
+        await _loadDemo();
       case SummaryMode.create:
         await _create();
     }
+  }
+
+  /// The example follows the app's language, also when it changes on screen.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = _demoLanguage;
+    if (language != null && language != context.appLanguageCode) _loadDemo();
+  }
+
+  Future<void> _loadDemo() async {
+    final language = _demoLanguage = context.appLanguageCode;
+    final raw = await _demoSummary(language);
+    if (!mounted || language != _demoLanguage) return;
+    final result = SummaryResult.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    await _show(SummaryEntry(
+      id: 'demo',
+      sourceUrl: result.thread.permalink,
+      thread: result.thread,
+      provider: result.meta.provider,
+      model: result.meta.model,
+      analysis: result.analysis,
+      analysisFr: null,
+      displayLang: 'orig',
+      commentsAnalyzed: result.meta.commentsAnalyzed,
+      commentsTotal: result.meta.commentsTotal,
+      createdAt: DateTime.now(),
+    ));
   }
 
   /// The bundled example in the app's language, English if there is none.
@@ -232,7 +249,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
 
   Future<void> _regenerate() async {
     final entry = _entry!;
-    if (entry.analysisFr != null) {
+    // Only the French app shows the translation, so only it warns about it.
+    if (entry.analysisFr != null && context.appLanguageCode == 'fr') {
       final ok = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -284,8 +302,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       if (!mounted) return;
       setState(() {
         _translating = false;
-        _translationError =
-            errorCopy(e, context.l10n, providerLabel: _entry!.provider.label).title;
+        _translationError = e;
       });
     }
   }
@@ -437,7 +454,10 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
         onDismissDuplicate: () => setState(() => _duplicateOf = null),
         onRegenerate: _regenerate,
         translating: _translating,
-        translationError: _translationError,
+        translationError: _translationError == null
+            ? null
+            : errorCopy(_translationError!, context.l10n, providerLabel: entry.provider.label)
+                .title,
         onTranslate: _translate,
         onLang: _setLang,
       );
@@ -550,7 +570,7 @@ class _SummaryContent extends StatelessWidget {
           ),
         if (duplicateOf != null)
           MaterialBanner(
-            content: Text(l.summaryAlreadySummarized(_bannerDate(duplicateOf!, l))),
+            content: Text(l.summaryAlreadySummarized(bannerDate(duplicateOf!, l))),
             actions: [
               TextButton(onPressed: onDismissDuplicate, child: Text(l.summaryClose)),
               TextButton(onPressed: onRegenerate, child: Text(l.summaryRegenerate)),
@@ -604,8 +624,8 @@ class _SummaryContent extends StatelessWidget {
                 const Divider(),
                 const SizedBox(height: Tokens.md),
                 Text(
-                  l.summaryStats(compactNumber(thread.score, l), percent(thread.upvoteRatio, l),
-                      '${thread.numComments}'),
+                  l.summaryStats(thread.score, compactNumber(thread.score, l),
+                      percent(thread.upvoteRatio, l), thread.numComments, '${thread.numComments}'),
                   style: t.caption,
                 ),
                 const SizedBox(height: Tokens.xxs),
@@ -622,11 +642,6 @@ class _SummaryContent extends StatelessWidget {
     );
   }
 
-  /// « il y a 2 jours », or « le 3 oct. » for an older date.
-  static String _bannerDate(DateTime date, AppLocalizations l) {
-    final label = relativeDate(date, l);
-    return isAbsoluteDate(date) ? l.summaryBannerOnDate(label) : label;
-  }
 }
 
 class _AiTake extends StatelessWidget {
@@ -700,7 +715,8 @@ class _LanguageControl extends StatelessWidget {
           ButtonSegment(value: 'orig', label: Text(context.l10n.summaryOriginal(code))),
           ButtonSegment(value: 'fr', label: Text(context.l10n.summaryFrench)),
         ],
-        selected: {entry.displayLang},
+        // Anything but 'fr' stored by mistake shows the original.
+        selected: {entry.displayLang == 'fr' ? 'fr' : 'orig'},
         onSelectionChanged: (s) => onLang(s.first),
       );
     }
