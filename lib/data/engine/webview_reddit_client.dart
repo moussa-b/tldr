@@ -28,7 +28,7 @@ class WebViewRedditClient implements RedditClient {
           code: 'UNSUPPORTED_URL', message: 'Not a post URL', retryable: false);
     }
     // Short `/s/` links are opened as is: the WebView follows the redirect.
-    final start = id == null ? link : 'https://www.reddit.com/comments/$id/';
+    final start = id == null ? link : 'https://www.reddit.com/comments/$id/?sort=top';
     final shared = host?.visible;
     final page = shared ?? RedditPage();
     try {
