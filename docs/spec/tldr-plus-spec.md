@@ -111,16 +111,16 @@ Un résumé (`SummaryResult`) = `{ thread, analysis, meta: { provider, model, co
 
 ### Lecture de Reddit
 
-Reddit renvoie **403** (page HTML) aux requêtes `.json` anonymes d'un client HTTP. L'app **ne s'appuie pas sur l'API OAuth de Reddit**, appelée à disparaître (décision du 2026-10-10). Lecture par `RedditPage` (`reddit_page.dart`) + `WebViewRedditClient` :
-1. Une WebView ouvre `https://www.reddit.com/comments/<id>/` (ou le lien court). L'écran Résumé l'affiche pendant la lecture (D-6) ; sans écran (Régénérer), elle tourne hors écran.
+Reddit renvoie **403** (page HTML) aux requêtes `.json` anonymes d'un client HTTP et, depuis octobre 2026, à celles d'un navigateur anonyme aussi (« You've been blocked by network security », vu le 2026-10-21 dans la WebView et dans Chrome mobile). L'app **ne s'appuie pas sur l'API OAuth de Reddit**, appelée à disparaître (décision du 2026-10-10). Lecture par `RedditPage` (`reddit_page.dart`) + `WebViewRedditClient` :
+1. Une WebView ouvre `https://www.reddit.com/comments/<id>/?sort=top` (ou le lien court), avec un user agent de navigateur de bureau, construit à partir de celui de la WebView (même moteur, même version : Chrome Linux sur Android, Safari Mac sur iOS) : aux téléphones anonymes, Reddit ne sert que quelques commentaires et aucun moyen de charger la suite. Un lien court qui mène au permalien d'un commentaire (qui n'affiche que ses réponses) est rouvert sur `https://www.reddit.com/comments/<id>/?sort=top`. L'écran Résumé l'affiche pendant la lecture (D-6) ; sans écran (Régénérer), elle tourne hors écran.
 2. Reddit sert un contrôle JavaScript ; la WebView l'exécute comme un navigateur et reçoit des cookies de session anonymes.
-3. Depuis la page, l'app exécute `fetch('/comments/<id>.json?sort=top&limit=500&depth=4&raw_json=1')`, au chargement de chaque page et toutes les 2 s (la page complète peut mettre longtemps à finir). Un 403 HTML = contrôle pas encore passé : on attend la tentative suivante. Timeout 25 s.
+3. Une fois la page chargée, au chargement de chaque page et toutes les 2 s, l'app y exécute `threadScript` (`thread_script.dart`) : il copie la page dans un document inerte (Reddit ne rend l'arbre des commentaires que pour une vraie navigation, pas pour un `fetch`), lit le post demandé (`shreddit-post[id="t3_<id>"]`) et les commentaires (`shreddit-comment`, les réponses étant imbriquées dans leur parent, un commentaire répété gardé une fois), puis remplit les blocs « plus de commentaires » (`POST /svc/shreddit/more-comments` sur l'origine de la page uniquement, champ `cursor` + `csrf_token`), les moins profonds d'abord, par lots, dans les limites fixées dans `thread_script.dart` (nombre de commentaires, profondeur 4, nombre de requêtes, temps, 5 s par requête). Il renvoie ce qu'il a lu avant l'échéance que lui donne `RedditPage` (le timeout moins 1,5 s), au format `[postListing, commentListing]` du `.json`, lu ensuite par `decodeListingBody` et `parseThreadListing`, avec le nombre de blocs non chargés (journalisé). Pas encore de `shreddit-post`, ou un post qui affiche moins de 80 % des commentaires annoncés sans bloc « plus de commentaires » = page pas prête : on attend la tentative suivante. Dans ce dernier cas, la page est rechargée une fois par thread (à la première visite, Reddit sert parfois un arbre réduit, complet une fois ses cookies posés). Un seul script tourne à la fois, et chaque lecture a son nonce. Timeout 25 s.
 4. La navigation est bloquée hors de ce thread sur reddit.com (liens, « Ouvrir l'app »). La feuille de consentement cookies (`#data-protection-consent-*`) est masquée par CSS, sans rien accepter.
 5. Dès que le résumé ou l'erreur s'affiche, la page est remplacée par `about:blank`.
 
 ⚠️ Cet accès n'est pas approuvé par la [Responsible Builder Policy](https://support.reddithelp.com/hc/en-us/articles/42728983564564-Responsible-Builder-Policy) de Reddit (demande d'accès API déposée le 2026-10-09, en attente). Risque accepté par l'utilisateur.
 
-Mapping d'erreurs (`decodeListingBody`, `parseThreadListing`) : 404 → `THREAD_NOT_FOUND` ; 403 avec corps JSON `reason` `quarantined`/`banned` → `THREAD_UNAVAILABLE` correspondant, autre `reason` → `private` ; 403 HTML (client refusé) → `REDDIT_UNAVAILABLE` `blocked` ; post avec `removed_by_category = deleted` ou selftext `[deleted]` → `deleted`, autre `removed_by_category` ou selftext `[removed]` → `removed` (uniquement si 0 commentaire exploitable, sinon on résume les commentaires) ; 5xx/429/réseau → `REDDIT_UNAVAILABLE`.
+Mapping d'erreurs (`threadScript`, `decodeListingBody`, `parseThreadListing`) : page sans `shreddit-post` en 404 → `THREAD_NOT_FOUND` ; en 403 (contrôle, blocage réseau ou communauté fermée, que la page ne permet pas de distinguer de façon fiable) → on attend, et le timeout donne `REDDIT_UNAVAILABLE` `blocked` : un subreddit privé ou en quarantaine n'a donc plus son message propre ; `item-state` du post contenant `deleted` / `removed` → `removed_by_category` ; 403 avec corps JSON `reason` `quarantined`/`banned` → `THREAD_UNAVAILABLE` correspondant, autre `reason` → `private` ; 403 HTML (client refusé) → `REDDIT_UNAVAILABLE` `blocked` ; post avec `removed_by_category = deleted` ou selftext `[deleted]` → `deleted`, autre `removed_by_category` ou selftext `[removed]` → `removed` (uniquement si 0 commentaire exploitable, sinon on résume les commentaires) ; 5xx/429/réseau → `REDDIT_UNAVAILABLE`.
 
 ### Sélection des commentaires (budget)
 
@@ -416,7 +416,7 @@ Partage ──▶ [ / ] ──push──▶ [ /summary/new ] ──(pas de clé)
 
 Demandé par l'utilisateur, consigné dans `DESIGN.md` (Motion) :
 - La page Reddit du thread s'affiche pendant sa lecture, avec une barre de progression de 2 dp en haut. Rien n'est affiché avant (pas de squelette).
-- Dès que le `.json` est lu, la page se dissout en poussière scintillante (grains couleur `text` sur un voile `surface`, 900 ms `easeOut`), qui reste pendant que l'IA écrit. En bas, sur une bande `surface` unie : « Analyse par l'IA… » et « Annuler ».
+- Dès que le thread est lu, la page se dissout en poussière scintillante (grains couleur `text` sur un voile `surface`, 900 ms `easeOut`), qui reste pendant que l'IA écrit. En bas, sur une bande `surface` unie : « Analyse par l'IA… » et « Annuler ».
 - Quand le résumé est prêt, la poussière s'écarte depuis le centre et révèle D-1 (1 100 ms `easeIn`). Une erreur s'affiche directement, sans poussière.
 - Réduction des animations : poussière immobile, révélation instantanée.
 
@@ -630,14 +630,14 @@ App
 
 ## Rollback Plan
 
-App pas encore publiée : rollback = revert git sur `develop`. Une fois publiée : republier la version précédente. Si Reddit bloque la lecture par WebView, la solution de repli serait de lire le contenu affiché par la page (DOM) plutôt que le `.json`.
+App pas encore publiée : rollback = revert git sur `develop`. Une fois publiée : republier la version précédente. Le repli prévu (lire le contenu affiché par la page plutôt que le `.json`) est en place depuis le blocage du `.json` d'octobre 2026.
 
 ## Risques
 
 | Risque | Impact | Mitigation |
 |---|---|---|
 | Lecture de Reddit par WebView non approuvée par la Responsible Builder Policy | Blocage ou changement du contrôle JavaScript → plus aucun résumé ; risque de refus de l'accès API | Erreur claire `REDDIT_UNAVAILABLE` `blocked` ; repli possible sur le contenu affiché par la page |
-| DOM de Reddit qui change (feuille cookies, page de contrôle) | Feuille cookies visible, lecture plus lente | Masquage CSS par identifiant, lecture du `.json` indépendante du rendu de la page |
+| DOM de Reddit qui change (feuille cookies, page de contrôle) | Feuille cookies visible, lecture plus lente | Masquage CSS par identifiant. La lecture dépend désormais du HTML de Reddit (`shreddit-post`, `shreddit-comment`, `faceplate-partial`) : `tool/live_summary.sh` le vérifie avant chaque ship |
 | IDs de modèles qui changent | `LLM_MODEL_UNAVAILABLE` | Catalogue embarqué mis à jour à chaque version, réconciliation R4 |
 | Lien court `/s/` qui change de format | Partage cassé | Redirection suivie par la WebView, erreur claire `THREAD_NOT_FOUND` |
 | Share Extension iOS sur appareil réel | Compte Apple Developer nécessaire | Simulateur pour le MVP |

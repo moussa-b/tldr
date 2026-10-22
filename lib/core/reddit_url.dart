@@ -49,6 +49,18 @@ String? extractPostId(String url) {
   return match?.group(1)?.toLowerCase();
 }
 
+/// Links to one comment (`/comments/<id>/<slug>/<comment>/`,
+/// `/comments/<id>/comment/<comment>/`), whose page shows only its replies.
+bool isCommentPermalink(String url) {
+  final segments = (Uri.tryParse(url.trim())?.pathSegments ?? const [])
+      .where((s) => s.isNotEmpty)
+      .toList();
+  final i = segments.indexOf('comments');
+  if (i < 0) return false;
+  final rest = segments.skip(i + 2).toList();
+  return rest.length >= 2 || (rest.isNotEmpty && rest.first == 'comment');
+}
+
 /// `/r/<sub>/s/<code>` share links, which redirect to a post.
 bool isShortLink(String url) {
   final segments = Uri.tryParse(url.trim())?.pathSegments ?? const [];
