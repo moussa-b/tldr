@@ -20,6 +20,9 @@ import 'package:tldr/features/home/home_screen.dart';
 import 'package:tldr/features/share/share_intent_source.dart';
 
 import 'fake_tldr_api.dart';
+import 'package:tldr/l10n/app_language.dart';
+import 'package:tldr/l10n/app_localizations.dart';
+import 'package:flutter/services.dart';
 
 /// A test fixture (test/fixtures), or the demo summary.
 Future<String> fileFixture(String name) => File(
@@ -30,7 +33,7 @@ Future<String> fileCatalog() => File('assets/catalog.json').readAsString();
 
 Future<void> initTestEnv() async {
   sqfliteFfiInit();
-  await initializeDateFormatting('fr_FR');
+  await initializeDateFormatting();
 }
 
 Future<AppDatabase> openTestDb() =>
@@ -39,7 +42,7 @@ Future<AppDatabase> openTestDb() =>
 
 
 class TestDeps {
-  TestDeps(this.db, this.api, this.keys)
+  TestDeps(this.db, this.api, this.keys, {this.language = const FixedLanguage(Locale('fr'))})
       : dao = SummariesDao(db.db),
         settings = SettingsRepository(db.db);
 
@@ -48,6 +51,10 @@ class TestDeps {
   final KeyStore keys;
   final SummariesDao dao;
   final SettingsRepository settings;
+
+  /// The app's « Langue » setting; French unless a test says otherwise, so
+  /// the tests do not depend on the machine's language.
+  final AppLanguage language;
 
   SummaryService get service => SummaryService(
       api: api, dao: dao, settings: settings, keys: keys, catalogAsset: fileCatalog);
@@ -59,18 +66,24 @@ class TestDeps {
         keyStoreProvider.overrideWithValue(keys),
         settingsProvider.overrideWithValue(settings),
         summaryServiceProvider.overrideWithValue(service),
+        initialAppLanguageProvider.overrideWithValue(language),
+        appVersionProvider.overrideWith((ref) async => '1.1.0'),
       ];
 }
 
-Future<TestDeps> testDeps({TldrApi? api, Map<ProviderId, String>? keys}) async =>
+Future<TestDeps> testDeps(
+        {TldrApi? api, Map<ProviderId, String>? keys, AppLanguage? language}) async =>
     TestDeps(await openTestDb(), api ?? FakeTldrApi(),
-        MemoryKeyStore(keys ?? {ProviderId.gemini: 'AIza-test-key'}));
+        MemoryKeyStore(keys ?? {ProviderId.gemini: 'AIza-test-key'}),
+        language: language ?? const FixedLanguage(Locale('fr')));
 
 /// Pumps the whole app. The DB work happens through sqflite_ffi on real I/O,
 /// so [tester.runAsync] is used around pumps that wait on it.
 Future<FakeShareIntentSource> pumpApp(WidgetTester tester, TestDeps deps,
     {String? initialShare}) async {
   HomeScreen.setupShownThisLaunch = false;
+  // An asset load cached by an earlier test never completes in this one.
+  rootBundle.clear();
   final share = FakeShareIntentSource(initialText: initialShare);
   await tester.pumpWidget(ProviderScope(
     overrides: deps.overrides,
@@ -90,5 +103,22 @@ Future<void> settle(WidgetTester tester, {int rounds = 20}) async {
 
 Widget wrapScreen(Widget child, TestDeps deps) => ProviderScope(
       overrides: deps.overrides,
-      child: MaterialApp(theme: AppTheme.light(), home: child),
+      child: Consumer(
+        builder: (context, ref, _) => MaterialApp(
+          theme: AppTheme.light(),
+          locale: ref.watch(appLocaleProvider),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: child,
+        ),
+      ),
+    );
+
+/// [child] in a bare app, in [locale] (French by default).
+Widget localized(Widget child, {Locale locale = const Locale('fr')}) => MaterialApp(
+      theme: AppTheme.light(),
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      home: child,
     );

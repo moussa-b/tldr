@@ -8,6 +8,7 @@ import '../../core/widgets/common.dart';
 import '../../data/models/models.dart';
 import '../../data/summary_service.dart';
 import '../settings/key_form.dart';
+import '../../l10n/l10n.dart';
 
 /// First-run setup in 2 steps (spec D-11). [pendingUrl] resumes a share.
 class SetupScreen extends ConsumerStatefulWidget {
@@ -24,12 +25,6 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
   ProviderId _provider = ProviderId.gemini;
   int _step = 1;
   bool _done = false;
-
-  static const _subtitles = {
-    ProviderId.gemini: 'Offre gratuite disponible',
-    ProviderId.anthropic: 'Claude, par Anthropic',
-    ProviderId.openai: 'GPT, par OpenAI',
-  };
 
   @override
   void initState() {
@@ -105,13 +100,18 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
     );
   }
 
+  static String _subtitle(ProviderId provider, AppLocalizations l) => switch (provider) {
+        ProviderId.gemini => l.setupGeminiSubtitle,
+        ProviderId.anthropic => l.setupAnthropicSubtitle,
+        ProviderId.openai => l.setupOpenaiSubtitle,
+      };
+
   List<Widget> _stepOne(BuildContext context) => [
-        Text('Étape 1 sur 2', style: context.text.meta),
+        Text(context.l10n.setupStep1, style: context.text.meta),
         const SizedBox(height: Tokens.xs),
-        Text('Résume n\'importe quel thread Reddit avec ta propre IA.',
-            style: context.text.readingLead),
+        Text(context.l10n.setupPitch, style: context.text.readingLead),
         const SizedBox(height: Tokens.xl),
-        Text('Choisis ton fournisseur', style: context.text.sectionLabel),
+        Text(context.l10n.setupChooseProvider, style: context.text.sectionLabel),
         const SizedBox(height: Tokens.xs),
         RadioGroup<ProviderId>(
           groupValue: _provider,
@@ -122,33 +122,33 @@ class _SetupScreenState extends ConsumerState<SetupScreen> {
                 value: p,
                 contentPadding: EdgeInsets.zero,
                 title: Text(p.label, style: context.text.body),
-                subtitle: Text(_subtitles[p]!, style: context.text.meta),
+                subtitle: Text(_subtitle(p, context.l10n), style: context.text.meta),
               ),
           ]),
         ),
         const SizedBox(height: Tokens.lg),
         Align(
           alignment: Alignment.centerRight,
-          child: FilledButton(onPressed: _continue, child: const Text('Continuer')),
+          child: FilledButton(onPressed: _continue, child: Text(context.l10n.setupContinue)),
         ),
       ];
 
   List<Widget> _stepTwo(BuildContext context, ProviderCatalog catalog) => [
-        Text('Étape 2 sur 2', style: context.text.meta),
+        Text(context.l10n.setupStep2, style: context.text.meta),
         const SizedBox(height: Tokens.xs),
-        Text('Colle ta clé ${_provider.label}', style: context.text.titleScreen),
+        Text(context.l10n.setupPasteKey(_provider.label), style: context.text.titleScreen),
         const SizedBox(height: Tokens.lg),
         KeyForm(
           provider: _provider,
           catalogProvider: catalog.provider(_provider),
-          buttonLabel: 'Vérifier',
+          buttonLabel: context.l10n.setupVerify,
           onSaved: _onSaved,
         ),
         if (_done) ...[
           const SizedBox(height: Tokens.lg),
           Semantics(
             liveRegion: true,
-            child: Text('C\'est prêt ✓',
+            child: Text(context.l10n.setupDone,
                 style: context.text.titleScreen.copyWith(color: context.colors.positive)),
           ),
         ],

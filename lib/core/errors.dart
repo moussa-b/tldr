@@ -1,3 +1,5 @@
+import '../l10n/app_localizations.dart';
+
 /// Error surfaced by [TldrApi]. `code` is one of the error codes of the spec
 /// (« Codes d'erreur »).
 class ApiError implements Exception {
@@ -37,7 +39,7 @@ class ApiError implements Exception {
   String toString() => 'ApiError($code: $message)';
 }
 
-/// French copy shown to the user for one error (spec D-7).
+/// Copy shown to the user for one error (spec D-7).
 class ErrorCopy {
   const ErrorCopy(this.title, this.body);
 
@@ -45,67 +47,49 @@ class ErrorCopy {
   final String body;
 }
 
-ErrorCopy errorCopy(ApiError error, {String providerLabel = 'le fournisseur'}) {
+/// [providerLabel] names the AI provider; without it, a generic name.
+ErrorCopy errorCopy(ApiError error, AppLocalizations l, {String? providerLabel}) {
+  final provider = providerLabel ?? l.errorProviderFallback;
   switch (error.code) {
     case 'LLM_QUOTA_EXCEEDED':
-      return ErrorCopy('Quota du fournisseur atteint',
-          'Ton quota $providerLabel est épuisé pour le moment.');
+      return ErrorCopy(l.errorQuotaTitle, l.errorQuotaBody(provider));
     case 'THREAD_UNAVAILABLE':
       return switch (error.reason) {
-        'removed' => const ErrorCopy('Post retiré par la modération',
-            'Ce thread n\'est plus disponible sur Reddit.'),
-        'private' => const ErrorCopy('Ce subreddit est privé',
-            'Seuls ses membres peuvent lire ce thread.'),
-        'quarantined' => const ErrorCopy('Subreddit en quarantaine',
-            'Reddit restreint l\'accès à ce subreddit.'),
-        'banned' => const ErrorCopy('Subreddit banni',
-            'Ce subreddit n\'existe plus sur Reddit.'),
-        _ => const ErrorCopy(
-            'Ce post a été supprimé', 'Il n\'y a plus rien à résumer.'),
+        'removed' => ErrorCopy(l.errorRemovedTitle, l.errorRemovedBody),
+        'private' => ErrorCopy(l.errorPrivateTitle, l.errorPrivateBody),
+        'quarantined' => ErrorCopy(l.errorQuarantinedTitle, l.errorQuarantinedBody),
+        'banned' => ErrorCopy(l.errorBannedTitle, l.errorBannedBody),
+        _ => ErrorCopy(l.errorDeletedTitle, l.errorDeletedBody),
       };
     case 'THREAD_NOT_FOUND':
-      return const ErrorCopy('Thread introuvable',
-          'Reddit ne trouve pas ce post. Vérifie le lien.');
+      return ErrorCopy(l.errorNotFoundTitle, l.errorNotFoundBody);
     case 'UNSUPPORTED_URL':
-      return const ErrorCopy('Ce lien n\'est pas un thread',
-          'TL;DR+ résume les posts Reddit, pas les profils ni les subreddits.');
+      return ErrorCopy(l.errorUnsupportedUrlTitle, l.errorUnsupportedUrlBody);
     case 'INVALID_URL':
-      return const ErrorCopy('Ce lien n\'est pas un thread Reddit',
-          'Partage ou colle un lien vers un post Reddit.');
+      return ErrorCopy(l.errorInvalidUrlTitle, l.errorInvalidUrlBody);
     case 'THREAD_EMPTY':
-      return const ErrorCopy('Rien à résumer',
-          'Ce post n\'a ni texte ni commentaires exploitables.');
+      return ErrorCopy(l.errorEmptyTitle, l.errorEmptyBody);
     case 'LLM_KEY_INVALID':
-      return ErrorCopy('Ta clé $providerLabel est refusée',
-          'Vérifie ou remplace ta clé dans les réglages.');
+      return ErrorCopy(l.errorKeyInvalidTitle(provider), l.errorKeyInvalidBody);
     case 'LLM_KEY_MISSING':
-      return ErrorCopy('Aucune clé $providerLabel',
-          'Ajoute ta clé IA pour lancer un résumé.');
+      return ErrorCopy(l.errorKeyMissingTitle(provider), l.errorKeyMissingBody);
     case 'LLM_MODEL_UNAVAILABLE':
     case 'UNSUPPORTED_MODEL':
-      return const ErrorCopy('Modèle indisponible',
-          'Choisis un autre modèle dans les réglages.');
+      return ErrorCopy(l.errorModelUnavailableTitle, l.errorModelUnavailableBody);
     case 'TIMEOUT':
-      return const ErrorCopy('C\'est trop long',
-          'Le résumé n\'a pas abouti à temps. Réessaie dans un moment.');
+      return ErrorCopy(l.errorTimeoutTitle, l.errorTimeoutBody);
     case 'NETWORK_ERROR':
-      return const ErrorCopy('Pas de connexion',
-          'Vérifie ta connexion internet puis réessaie.');
+      return ErrorCopy(l.errorNetworkTitle, l.errorNetworkBody);
     case 'LLM_UNAVAILABLE':
-      return ErrorCopy('$providerLabel ne répond pas',
-          'Le fournisseur IA est indisponible pour le moment.');
+      return ErrorCopy(l.errorLlmUnavailableTitle(provider), l.errorLlmUnavailableBody);
     case 'LLM_OUTPUT_INVALID':
-      return const ErrorCopy('Réponse de l\'IA inutilisable',
-          'L\'IA a renvoyé un résultat incomplet. Réessaie.');
+      return ErrorCopy(l.errorOutputInvalidTitle, l.errorOutputInvalidBody);
     case 'REDDIT_UNAVAILABLE':
       if (error.reason == 'blocked') {
-        return const ErrorCopy('Reddit refuse l\'accès',
-            'Reddit bloque temporairement la lecture de ce thread. Réessaie dans '
-            'quelques minutes.');
+        return ErrorCopy(l.errorRedditBlockedTitle, l.errorRedditBlockedBody);
       }
-      return const ErrorCopy('Reddit ne répond pas',
-          'Reddit est indisponible pour le moment. Réessaie.');
+      return ErrorCopy(l.errorRedditUnavailableTitle, l.errorRedditUnavailableBody);
     default:
-      return const ErrorCopy('Une erreur est survenue', 'Réessaie dans un moment.');
+      return ErrorCopy(l.errorGenericTitle, l.errorGenericBody);
   }
 }

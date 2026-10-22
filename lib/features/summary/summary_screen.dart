@@ -21,6 +21,7 @@ import '../../data/models/models.dart';
 import '../../data/settings/settings_repository.dart';
 import 'dust_veil.dart';
 import 'summary_widgets.dart';
+import '../../l10n/l10n.dart';
 
 enum SummaryMode { entry, create, demo }
 
@@ -58,7 +59,10 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
   bool _loading = false;
   bool _regenerating = false;
   bool _translating = false;
-  String? _translationError;
+  ApiError? _translationError;
+
+  /// The language the example was loaded in (demo mode).
+  String? _demoLanguage;
   DateTime? _duplicateOf;
   String _modelName = '';
   ApiCancelToken? _cancelToken;
@@ -88,23 +92,46 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
         }
         _show(entry);
       case SummaryMode.demo:
-        final raw = await rootBundle.loadString('assets/demo/summary_fr.json');
-        final result = SummaryResult.fromJson(jsonDecode(raw) as Map<String, dynamic>);
-        _show(SummaryEntry(
-          id: 'demo',
-          sourceUrl: result.thread.permalink,
-          thread: result.thread,
-          provider: result.meta.provider,
-          model: result.meta.model,
-          analysis: result.analysis,
-          analysisFr: null,
-          displayLang: 'orig',
-          commentsAnalyzed: result.meta.commentsAnalyzed,
-          commentsTotal: result.meta.commentsTotal,
-          createdAt: DateTime.now(),
-        ));
+        await _loadDemo();
       case SummaryMode.create:
         await _create();
+    }
+  }
+
+  /// The example follows the app's language, also when it changes on screen.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = _demoLanguage;
+    if (language != null && language != context.appLanguageCode) _loadDemo();
+  }
+
+  Future<void> _loadDemo() async {
+    final language = _demoLanguage = context.appLanguageCode;
+    final raw = await _demoSummary(language);
+    if (!mounted || language != _demoLanguage) return;
+    final result = SummaryResult.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    await _show(SummaryEntry(
+      id: 'demo',
+      sourceUrl: result.thread.permalink,
+      thread: result.thread,
+      provider: result.meta.provider,
+      model: result.meta.model,
+      analysis: result.analysis,
+      analysisFr: null,
+      displayLang: 'orig',
+      commentsAnalyzed: result.meta.commentsAnalyzed,
+      commentsTotal: result.meta.commentsTotal,
+      createdAt: DateTime.now(),
+    ));
+  }
+
+  /// The bundled example in the app's language, English if there is none.
+  static Future<String> _demoSummary(String language) async {
+    try {
+      return await rootBundle.loadString('assets/demo/summary_$language.json');
+    } on FlutterError {
+      return rootBundle.loadString('assets/demo/summary_en.json');
     }
   }
 
@@ -196,8 +223,8 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
 
   void _announceFallbacks(List<dynamic> fallbacks) {
     if (!mounted || fallbacks.isEmpty) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Modèle indisponible : le modèle par défaut a été utilisé.')));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(context.l10n.summaryModelFallback)));
   }
 
   Future<void> _show(SummaryEntry entry) async {
@@ -222,17 +249,20 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
 
   Future<void> _regenerate() async {
     final entry = _entry!;
-    if (entry.analysisFr != null) {
+    // Only the French app shows the translation, so only it warns about it.
+    if (entry.analysisFr != null && context.appLanguageCode == 'fr') {
       final ok = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Régénérer ce résumé ?'),
-          content: const Text('La traduction française sera supprimée.'),
+          title: Text(context.l10n.summaryRegenerateTitle),
+          content: Text(context.l10n.summaryRegenerateBody),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(context.l10n.summaryCancel)),
             TextButton(
-                onPressed: () => Navigator.pop(context, true), child: const Text('Régénérer')),
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(context.l10n.summaryRegenerate)),
           ],
         ),
       );
@@ -251,7 +281,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
     } on ApiError catch (e) {
       if (!mounted) return;
       setState(() => _regenerating = false);
-      _snack(errorCopy(e, providerLabel: entry.provider.label).title,
+      _snack(errorCopy(e, context.l10n, providerLabel: entry.provider.label).title,
           retry: e.retryable ? _regenerate : null);
     }
   }
@@ -272,7 +302,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
       if (!mounted) return;
       setState(() {
         _translating = false;
-        _translationError = errorCopy(e, providerLabel: _entry!.provider.label).title;
+        _translationError = e;
       });
     }
   }
@@ -287,13 +317,15 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
   void _snack(String message, {VoidCallback? retry}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(message),
-      action: retry == null ? null : SnackBarAction(label: 'Réessayer', onPressed: retry),
+      action: retry == null
+          ? null
+          : SnackBarAction(label: context.l10n.summaryRetry, onPressed: retry),
     ));
   }
 
   Future<void> _share() async {
     final entry = _entry!;
-    final a = entry.displayed;
+    final a = entry.displayedIn(context.appLanguageCode);
     await SharePlus.instance.share(ShareParams(
       text: '${entry.thread.title}\n\n${a.shortSummary}\n\n${entry.thread.permalink}\n— via TL;DR+',
       subject: entry.thread.title,
@@ -303,7 +335,7 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
   Future<void> _openReddit() async {
     final uri = Uri.parse(_entry!.thread.permalink);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
-      _snack('Impossible d\'ouvrir Reddit');
+      _snack(context.l10n.summaryCannotOpenReddit);
     }
   }
 
@@ -332,21 +364,22 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
           actions: [
             if (entry != null && !isDemo) ...[
               IconButton(
-                tooltip: 'Partager le résumé',
+                tooltip: context.l10n.summaryShare,
                 icon: const Icon(Icons.ios_share),
                 onPressed: _share,
               ),
               IconButton(
-                tooltip: 'Ouvrir dans Reddit',
+                tooltip: context.l10n.summaryOpenInReddit,
                 icon: const Icon(Icons.open_in_new),
                 onPressed: _openReddit,
               ),
               PopupMenuButton<String>(
-                tooltip: 'Plus d\'options',
+                tooltip: context.l10n.summaryMoreOptions,
                 enabled: !_regenerating,
                 onSelected: (_) => _regenerate(),
-                itemBuilder: (_) =>
-                    const [PopupMenuItem(value: 'regen', child: Text('Régénérer'))],
+                itemBuilder: (_) => [
+                  PopupMenuItem(value: 'regen', child: Text(context.l10n.summaryRegenerate)),
+                ],
               ),
             ],
           ],
@@ -421,12 +454,15 @@ class _SummaryScreenState extends ConsumerState<SummaryScreen> {
         onDismissDuplicate: () => setState(() => _duplicateOf = null),
         onRegenerate: _regenerate,
         translating: _translating,
-        translationError: _translationError,
+        translationError: _translationError == null
+            ? null
+            : errorCopy(_translationError!, context.l10n, providerLabel: entry.provider.label)
+                .title,
         onTranslate: _translate,
         onLang: _setLang,
       );
 
-  String _providerLabel() => (_entry?.provider ?? _provider)?.label ?? 'le fournisseur';
+  String? _providerLabel() => (_entry?.provider ?? _provider)?.label;
 }
 
 /// The Reddit page while its listing loads.
@@ -439,7 +475,9 @@ class _PageLoading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: listed ? 'Analyse par l\'IA en cours' : 'Récupération du thread',
+      label: listed
+          ? context.l10n.summaryAnalyzingSemantics
+          : context.l10n.summaryFetchingSemantics,
       liveRegion: true,
       child: Stack(
         fit: StackFit.expand,
@@ -477,9 +515,9 @@ class _WritingCaption extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Analyse par l\'IA…', style: context.text.label),
+                Text(context.l10n.summaryAnalyzingStep, style: context.text.label),
                 const SizedBox(height: Tokens.xs),
-                TextButton(onPressed: onCancel, child: const Text('Annuler')),
+                TextButton(onPressed: onCancel, child: Text(context.l10n.summaryCancel)),
               ],
             ),
           ),
@@ -517,7 +555,9 @@ class _SummaryContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final a = entry.displayed;
+    final l = context.l10n;
+    final language = context.appLanguageCode;
+    final a = entry.displayedIn(language);
     final t = context.text;
     final thread = entry.thread;
     return ListView(
@@ -525,15 +565,15 @@ class _SummaryContent extends StatelessWidget {
       children: [
         if (isDemo)
           MaterialBanner(
-            content: const Text('Exemple : ce résumé n\'utilise pas ta clé et n\'est pas enregistré.'),
-            actions: [TextButton(onPressed: () => context.go('/'), child: const Text('Fermer'))],
+            content: Text(l.summaryDemoBanner),
+            actions: [TextButton(onPressed: () => context.go('/'), child: Text(l.summaryClose))],
           ),
         if (duplicateOf != null)
           MaterialBanner(
-            content: Text('Déjà résumé ${_bannerDate(duplicateOf!)}'),
+            content: Text(l.summaryAlreadySummarized(bannerDate(duplicateOf!, l))),
             actions: [
-              TextButton(onPressed: onDismissDuplicate, child: const Text('Fermer')),
-              TextButton(onPressed: onRegenerate, child: const Text('Régénérer')),
+              TextButton(onPressed: onDismissDuplicate, child: Text(l.summaryClose)),
+              TextButton(onPressed: onRegenerate, child: Text(l.summaryRegenerate)),
             ],
           ),
         ReadableWidth(
@@ -545,7 +585,7 @@ class _SummaryContent extends StatelessWidget {
                 const SizedBox(height: Tokens.xs),
                 SubredditMeta(
                   subreddit: thread.subreddit,
-                  trailing: relativeDate(thread.createdAt),
+                  trailing: relativeDate(thread.createdAt, l),
                   nsfw: thread.isNsfw,
                 ),
                 const SizedBox(height: Tokens.xs),
@@ -556,7 +596,7 @@ class _SummaryContent extends StatelessWidget {
                   child: Text(thread.title,
                       style: t.titleThread, maxLines: 3, overflow: TextOverflow.ellipsis),
                 ),
-                if (entry.canTranslate && !isDemo) ...[
+                if (entry.canTranslateIn(language) && !isDemo) ...[
                   const SizedBox(height: Tokens.md),
                   _LanguageControl(
                     entry: entry,
@@ -567,14 +607,14 @@ class _SummaryContent extends StatelessWidget {
                   ),
                 ],
                 Section(
-                  label: 'En bref',
+                  label: l.summaryInShort,
                   top: Tokens.md,
                   child: Text(a.shortSummary, style: t.readingLead),
                 ),
                 const SizedBox(height: Tokens.md),
                 VerdictLine(analysis: a),
                 Section(
-                  label: 'Points de vue',
+                  label: l.summaryViewpoints,
                   child: ExpandableText(
                       text: a.detailedSummary, style: t.readingBody),
                 ),
@@ -584,13 +624,14 @@ class _SummaryContent extends StatelessWidget {
                 const Divider(),
                 const SizedBox(height: Tokens.md),
                 Text(
-                  '${compactNumber(thread.score)} points · ${percent(thread.upvoteRatio)} upvotés · '
-                  '${thread.numComments} commentaires',
+                  l.summaryStats(thread.score, compactNumber(thread.score, l),
+                      percent(thread.upvoteRatio, l), thread.numComments, '${thread.numComments}'),
                   style: t.caption,
                 ),
                 const SizedBox(height: Tokens.xxs),
                 Text(
-                  '${entry.commentsAnalyzed} commentaires analysés sur ${entry.commentsTotal} · $modelName',
+                  l.summaryCommentsAnalyzed(
+                      '${entry.commentsAnalyzed}', '${entry.commentsTotal}', modelName),
                   style: t.caption,
                 ),
               ],
@@ -601,12 +642,6 @@ class _SummaryContent extends StatelessWidget {
     );
   }
 
-  static String _bannerDate(DateTime date) {
-    final label = relativeDate(date);
-    return label.startsWith('il y a') || label == 'hier' || label == 'à l\'instant'
-        ? label
-        : 'le $label';
-  }
 }
 
 class _AiTake extends StatelessWidget {
@@ -632,7 +667,8 @@ class _AiTake extends StatelessWidget {
             child: Row(children: [
               Icon(Icons.psychology_outlined, size: 18, color: scheme.onSurface),
               const SizedBox(width: 6),
-              Text('L\'avis de l\'IA', style: context.text.sectionLabel),
+              // Wraps at large text sizes instead of overflowing.
+              Flexible(child: Text(context.l10n.summaryAiTake, style: context.text.sectionLabel)),
             ]),
           ),
           const SizedBox(height: 6),
@@ -670,16 +706,17 @@ class _LanguageControl extends StatelessWidget {
             ? const SizedBox(
                 width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
             : const Icon(Icons.translate, size: 18),
-        label: const Text('Traduire en français'),
+        label: Text(context.l10n.summaryTranslateToFrench),
       );
     } else {
       control = SegmentedButton<String>(
         showSelectedIcon: false,
         segments: [
-          ButtonSegment(value: 'orig', label: Text('VO ($code)')),
-          const ButtonSegment(value: 'fr', label: Text('FR')),
+          ButtonSegment(value: 'orig', label: Text(context.l10n.summaryOriginal(code))),
+          ButtonSegment(value: 'fr', label: Text(context.l10n.summaryFrench)),
         ],
-        selected: {entry.displayLang},
+        // Anything but 'fr' stored by mistake shows the original.
+        selected: {entry.displayLang == 'fr' ? 'fr' : 'orig'},
         onSelectionChanged: (s) => onLang(s.first),
       );
     }
@@ -695,7 +732,7 @@ class _LanguageControl extends StatelessWidget {
                 child: Text(error!,
                     style: context.text.meta.copyWith(color: context.scheme.error)),
               ),
-              TextButton(onPressed: onTranslate, child: const Text('Réessayer')),
+              TextButton(onPressed: onTranslate, child: Text(context.l10n.summaryRetry)),
             ]),
           ),
       ],

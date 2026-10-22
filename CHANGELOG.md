@@ -2,6 +2,22 @@
 
 Toutes les versions notables de TL;DR+. La version de l'app (`pubspec.yaml`) suit les trois premiers chiffres de `VERSION`.
 
+## [1.1.0.0] - 2026-10-22
+
+### Added
+- TL;DR+ parle anglais : l'app suit la langue du téléphone (français si le téléphone est en français, anglais sinon).
+- Nouveau réglage « Langue » : « Langue de l'appareil », « Français » ou « English ». Le changement est immédiat, sans redémarrer.
+- La langue de l'app se choisit aussi dans les réglages du téléphone (Android 13+ et iOS).
+- Un exemple en anglais dans « Voir un exemple ».
+
+### Changed
+- « Traduire en français » n'apparaît que lorsque l'app est en français. Les traductions déjà faites restent enregistrées.
+- Si tu avais déjà des résumés, l'app reste en français après la mise à jour, même sur un téléphone dans une autre langue.
+- Le réglage « Version » affiche la vraie version de l'app.
+
+### Fixed
+- Sur les petits écrans, le menu « Modèle », le bouton « Enregistrer » et le titre « L'avis de l'IA » ne débordent plus, même avec un texte agrandi.
+
 ## [1.0.2.0] - 2026-10-22
 
 ### Fixed

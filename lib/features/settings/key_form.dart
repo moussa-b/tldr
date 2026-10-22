@@ -6,10 +6,7 @@ import '../../app/providers.dart';
 import '../../app/theme.dart';
 import '../../data/models/models.dart';
 import '../../data/summary_service.dart';
-
-const privacyNote =
-    'Ta clé est enregistrée uniquement sur ce téléphone et n\'est envoyée qu\'à '
-    'ton fournisseur IA.';
+import '../../l10n/l10n.dart';
 
 /// API key field + « Obtenir une clé » + save with automatic validation
 /// (spec D-5). Shared by the settings and the first-run setup.
@@ -19,13 +16,14 @@ class KeyForm extends ConsumerStatefulWidget {
     required this.provider,
     required this.catalogProvider,
     required this.onSaved,
-    this.buttonLabel = 'Enregistrer',
+    this.buttonLabel,
   });
 
   final ProviderId provider;
   final CatalogProvider catalogProvider;
   final ValueChanged<KeySaveResult> onSaved;
-  final String buttonLabel;
+  /// « Enregistrer » by default.
+  final String? buttonLabel;
 
   @override
   ConsumerState<KeyForm> createState() => _KeyFormState();
@@ -98,10 +96,14 @@ class _KeyFormState extends ConsumerState<KeyForm> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Supprimer la clé ${widget.provider.label} ?'),
+        title: Text(context.l10n.keyFormDeleteTitle(widget.provider.label)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(context.l10n.keyFormCancel)),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(context.l10n.keyFormDelete)),
         ],
       ),
     );
@@ -121,17 +123,18 @@ class _KeyFormState extends ConsumerState<KeyForm> {
     final scheme = context.scheme;
     final colors = context.colors;
     final label = widget.provider.label;
+    final l = context.l10n;
     final (resultText, resultColor) = switch (_result) {
-      KeySaveResult.valid => ('✓ Clé valide', colors.positive),
-      KeySaveResult.refused => ('✗ Clé refusée par $label', scheme.error),
-      KeySaveResult.unverified => ('Enregistrée, non vérifiée', scheme.onSurfaceVariant),
-      KeySaveResult.empty => ('Colle ta clé avant d\'enregistrer', scheme.error),
+      KeySaveResult.valid => (l.keyFormValid, colors.positive),
+      KeySaveResult.refused => (l.keyFormRefused(label), scheme.error),
+      KeySaveResult.unverified => (l.keyFormUnverified, scheme.onSurfaceVariant),
+      KeySaveResult.empty => (l.keyFormEmpty, scheme.error),
       null => (null, null),
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Clé API $label', style: context.text.label),
+        Text(l.keyFormLabel(label), style: context.text.label),
         const SizedBox(height: 6),
         TextField(
           controller: _controller,
@@ -140,17 +143,17 @@ class _KeyFormState extends ConsumerState<KeyForm> {
           enableSuggestions: false,
           style: context.text.body,
           decoration: InputDecoration(
-            hintText: 'Colle ta clé ici',
+            hintText: l.keyFormHint,
             hintStyle: context.text.bodyMuted,
             suffixIcon: Row(mainAxisSize: MainAxisSize.min, children: [
               IconButton(
-                tooltip: _obscure ? 'Afficher la clé' : 'Masquer la clé',
+                tooltip: _obscure ? l.keyFormShow : l.keyFormHide,
                 icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
               if (_hasStoredKey)
                 IconButton(
-                  tooltip: 'Supprimer la clé',
+                  tooltip: l.keyFormDeleteKey,
                   icon: const Icon(Icons.delete_outline),
                   onPressed: _delete,
                 ),
@@ -161,21 +164,22 @@ class _KeyFormState extends ConsumerState<KeyForm> {
         if (_patternMismatch)
           Padding(
             padding: const EdgeInsets.only(bottom: 4),
-            child: Text('Ce format ne ressemble pas à une clé $label.',
+            child: Text(l.keyFormPatternMismatch(label),
                 style: context.text.caption),
           ),
-        Text(privacyNote, style: context.text.caption),
+        Text(l.keyFormPrivacy, style: context.text.caption),
         TextButton.icon(
           style: TextButton.styleFrom(padding: EdgeInsets.zero),
           onPressed: () => launchUrl(Uri.parse(widget.catalogProvider.keyHelpUrl),
               mode: LaunchMode.externalApplication),
           icon: const Icon(Icons.open_in_new, size: 16),
-          label: Text('Obtenir une clé $label'),
+          label: Text(l.keyFormGetKey(label)),
         ),
         const SizedBox(height: Tokens.xs),
         Row(
           children: [
             Expanded(
+              flex: 3,
               child: resultText == null
                   ? const SizedBox.shrink()
                   : Semantics(
@@ -184,12 +188,20 @@ class _KeyFormState extends ConsumerState<KeyForm> {
                           style: context.text.label.copyWith(color: resultColor)),
                     ),
             ),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : Text(widget.buttonLabel),
+            // At most 2/5 of the row, right-aligned: its label wraps at large text
+            // sizes instead of overflowing.
+            Flexible(
+              flex: 2,
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Text(widget.buttonLabel ?? l.keyFormSave, textAlign: TextAlign.center),
+                ),
+              ),
             ),
           ],
         ),

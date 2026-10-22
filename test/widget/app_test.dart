@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tldr/data/models/models.dart';
 
 import '../helpers.dart';
+import 'package:tldr/l10n/app_language.dart';
 
 Future<void> tearDownApp(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox());
@@ -130,22 +131,29 @@ void main() {
     await tearDownApp(tester);
   });
 
-  testWidgets('summary survives 200 % text scale and meets tap/contrast guidelines', (tester) async {
-    final deps = await tester.runAsync(testDeps);
-    tester.platformDispatcher.textScaleFactorTestValue = 2.0;
-    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    await pumpApp(tester, deps!, initialShare: 'https://www.reddit.com/r/france/comments/1abc23d/x/');
-    await settle(tester, rounds: 40);
-    expect(tester.takeException(), isNull);
-    expect(find.text('En bref'), findsOneWidget);
-    tester.platformDispatcher.clearTextScaleFactorTestValue();
-    await tester.pump();
-    final handle = tester.ensureSemantics();
-    await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
-    await expectLater(tester, meetsGuideline(textContrastGuideline));
-    handle.dispose();
-    await tearDownApp(tester);
-  });
+  for (final (language, inShort) in [
+    (const FixedLanguage(Locale('fr')), 'En bref'),
+    (const FixedLanguage(Locale('en')), 'In short'),
+  ]) {
+    testWidgets('summary survives 200 % text scale and meets tap/contrast guidelines '
+        '(${language.code})', (tester) async {
+      final deps = await tester.runAsync(() => testDeps(language: language));
+      tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      await pumpApp(tester, deps!,
+          initialShare: 'https://www.reddit.com/r/france/comments/1abc23d/x/');
+      await settle(tester, rounds: 40);
+      expect(tester.takeException(), isNull);
+      expect(find.text(inShort), findsOneWidget);
+      tester.platformDispatcher.clearTextScaleFactorTestValue();
+      await tester.pump();
+      final handle = tester.ensureSemantics();
+      await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
+      await expectLater(tester, meetsGuideline(textContrastGuideline));
+      handle.dispose();
+      await tearDownApp(tester);
+    });
+  }
 
   testWidgets('long press on a history row opens delete and share', (tester) async {
     final deps = await tester.runAsync(testDeps);
