@@ -8,70 +8,118 @@
 /// for later (`/svc/shreddit/more-comments`, one POST each), shallowest first,
 /// the way the page fills them in when they are tapped or scrolled to.
 ///
-/// The script answers on [channel] with `{nonce, status, text}`, where `text`
-/// is the thread in the `[postListing, commentListing]` shape of Reddit's
-/// `.json`, so the rest of the engine reads it as before. Status 0 means « not
-/// ready yet, try again »: the page is still Reddit's check, or a request failed.
+/// The script answers on [channel] with `{nonce, status, text, failed}`, where
+/// `text` is the thread in the `[postListing, commentListing]` shape of
+/// Reddit's `.json`, so the rest of the engine reads it as before, and
+/// `failed` counts the « more comments » blocks it could not load. Status 0
+/// means « not ready yet, try again »: the page is still Reddit's check, or the
+/// post is not on it yet; 1, that the post is there but its comments are still
+/// loading. Whatever was read is sent by [deadlineMs] (epoch ms).
 String threadScript({
   required String channel,
   required String nonce,
-  int maxComments = 500,
-  int maxDepth = 4,
-  int maxRequests = 60,
-  int budgetMs = 10000,
+  required String postId,
+  required int deadlineMs,
 }) =>
     '''
 (async () => {
-  const send = (status, text) =>
-    $channel.postMessage(JSON.stringify({nonce: "$nonce", status, text}));
+  // Taken before any await: a page script swapping them later cannot read
+  // the nonce from our calls.
+  const channel = $channel, stringify = JSON.stringify;
+  const send = (status, text, failed = 0) =>
+    channel.postMessage(stringify({nonce: "$nonce", status, text, failed}));
+  // One run at a time: a tick that finds one running leaves the answer to it.
+  if (window.__tldrRun === "$nonce") return;
+  window.__tldrRun = "$nonce";
+  const left = () => $deadlineMs - Date.now();
+  const abortAfter = (ms) => {
+    if (AbortSignal.timeout) return AbortSignal.timeout(ms);
+    const c = new AbortController();
+    setTimeout(() => c.abort(), ms);
+    return c.signal;
+  };
+  const number = (value, fallback) => {
+    const n = parseFloat(value);
+    return Number.isFinite(n) ? n : fallback;
+  };
   try {
-    if (document.readyState !== "complete") return send(0, "");
-    const post = document.querySelector("shreddit-post");
+    const post = document.querySelector('shreddit-post[id="t3_$postId"]');
     if (!post) {
-      // Reddit's check, or an error page: its status says which.
-      if (!location.protocol.startsWith("http")) return send(0, "");
-      const r = await fetch(location.href, {credentials: "include"});
-      const t = await r.text();
-      if (r.status === 404) return send(404, '{"error":404}');
-      if (r.status === 403 && !/network security/i.test(t)) {
-        return send(403, '{"error":403,"reason":"private"}');
+      // Reddit's check, or an error page: its status, read once per page,
+      // says which. A 403 may be the check or a closed community alike: both
+      // wait, and the timeout reports Reddit refusing the read.
+      if (!location.protocol.startsWith("http") || document.readyState === "loading") {
+        return send(0, "");
       }
-      return send(r.status === 403 ? 403 : 0, "");
+      if (window.__tldrStatus === undefined) {
+        const r = await fetch(location.href,
+          {credentials: "include", signal: abortAfter(Math.max(1, Math.min(5000, left())))});
+        window.__tldrStatus = r.status;
+      }
+      if (window.__tldrStatus === 404) return send(404, '{"error":404}');
+      return send(window.__tldrStatus === 403 ? 403 : 0, "");
+    }
+    const sub = post.getAttribute("subreddit-name") ||
+      (location.pathname.match(/^\\/r\\/([^/]+)/) || [])[1];
+    if (!sub) return send(1, "");
+    // The comment tree renders after the post, a few comments first and the
+    // « more comments » blocks later, and the page is still being parsed while
+    // it loads: wait for them while there is time.
+    const announced = number(post.getAttribute("comment-count"), 0);
+    const shown = document.querySelectorAll("shreddit-comment").length;
+    const short = shown < announced * 0.8 &&
+      !document.querySelector('faceplate-partial[method="post" i]');
+    if ((short || document.readyState === "loading") && left() > 6000) {
+      // On a first visit Reddit may serve fewer comments and no way to load
+      // the rest; reloaded with the cookies it just set, it serves them all.
+      if (short && document.readyState !== "loading" && left() > 10000 &&
+          !sessionStorage.getItem("tldr-reloaded-$postId")) {
+        sessionStorage.setItem("tldr-reloaded-$postId", "1");
+        location.reload();
+      }
+      return send(1, "");
     }
 
-    const start = Date.now();
     const parse = (html) => new DOMParser().parseFromString(html, "text/html");
-    const id = (post.getAttribute("id") || "").replace(/^t3_/, "");
-    const sub = post.getAttribute("subreddit-name");
-    const permalink = post.getAttribute("permalink") || "/r/" + sub + "/comments/" + id + "/";
+    const permalink = post.getAttribute("permalink") || "/r/" + sub + "/comments/$postId/";
     // An inert copy, filled in without touching the page's own scripts.
     const doc = parse(document.documentElement.outerHTML);
-    const top = doc.querySelector("shreddit-post") || post;
+    const top = doc.querySelector('shreddit-post[id="t3_$postId"]') || post;
 
-    const csrf = (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/) || [])[1] || "";
-    const depthOf = (p) => +(new URL(p.getAttribute("src"), location.href)
-      .searchParams.get("startingDepth") || 0);
-    let requests = 0;
+    const csrf = (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/) || [])[1] ||
+      (document.querySelector("input[name=csrf_token]") || {}).value || "";
+    // Only Reddit's own « more comments » endpoint gets the page's cookies.
+    const target = (p) => {
+      const url = new URL(p.getAttribute("src") || "", location.href);
+      return url.origin === location.origin &&
+        url.pathname.startsWith("/svc/shreddit/more-comments/") ? url : null;
+    };
+    const depthOf = (url) => +(url.searchParams.get("startingDepth") || 0);
+    const end = Math.min(Date.now() + $_budgetMs, $deadlineMs);
+    let requests = 0, failed = 0;
     for (;;) {
-      if (requests >= $maxRequests || Date.now() - start > $budgetMs) break;
-      if (doc.querySelectorAll("shreddit-comment").length >= $maxComments) break;
-      const more = [...doc.querySelectorAll("faceplate-partial[method=post]")]
-        .filter((p) => /more-comments/.test(p.getAttribute("src")) && depthOf(p) <= $maxDepth)
-        .sort((a, b) => depthOf(a) - depthOf(b))
-        .slice(0, Math.min(6, $maxRequests - requests));
+      if (requests >= $_maxRequests || Date.now() >= end) break;
+      if (doc.querySelectorAll("shreddit-comment").length >= $_maxComments) break;
+      const more = [...doc.querySelectorAll('faceplate-partial[method="post" i]')]
+        .map((p) => ({p, url: target(p)}))
+        .filter(({url}) => url && depthOf(url) <= $_maxDepth)
+        .sort((a, b) => depthOf(a.url) - depthOf(b.url))
+        .slice(0, Math.min($_batchSize, $_maxRequests - requests));
       if (more.length === 0) break;
       requests += more.length;
-      await Promise.all(more.map(async (p) => {
+      await Promise.all(more.map(async ({p, url}) => {
         const form = new URLSearchParams();
         p.querySelectorAll("input[type=hidden]").forEach((i) => form.append(i.name, i.value));
         form.append("csrf_token", csrf);
         try {
-          const res = await fetch(p.getAttribute("src"), {method: "POST", credentials: "include",
-            headers: {"content-type": "application/x-www-form-urlencoded"}, body: form});
+          const res = await fetch(url.href, {method: "POST", credentials: "same-origin",
+            headers: {"content-type": "application/x-www-form-urlencoded"}, body: form,
+            signal: abortAfter(Math.max(1, Math.min($_requestTimeoutMs, end - Date.now())))});
           if (!res.ok) throw new Error(String(res.status));
           const part = parse(await res.text());
           p.replaceWith(...[...part.body.childNodes].map((n) => doc.importNode(n, true)));
         } catch (_) {
+          failed++;
           p.remove();
         }
       }));
@@ -95,14 +143,21 @@ String threadScript({
       return out.replace(/[ \\t]+\\n/g, "\\n").replace(/\\n[ \\t]+/g, "\\n")
         .replace(/\\n{3,}/g, "\\n\\n").trim();
     };
-    const number = (value, fallback) => {
-      const n = parseFloat(value);
-      return Number.isFinite(n) ? n : fallback;
-    };
 
-    // Each comment's replies are the comments nested in its element.
-    const all = [...doc.querySelectorAll("shreddit-comment")];
-    const parentOf = (c) => (c.parentElement && c.parentElement.closest("shreddit-comment")) || null;
+    // Each comment's replies are the comments nested in its element. A
+    // comment a « more comments » answer repeats is kept once.
+    const kept = new Map();
+    const all = [];
+    for (const c of doc.querySelectorAll("shreddit-comment")) {
+      const id = c.getAttribute("thingid");
+      if (!id || kept.has(id)) continue;
+      kept.set(id, c);
+      all.push(c);
+    }
+    const parentOf = (c) => {
+      const el = c.parentElement && c.parentElement.closest("shreddit-comment");
+      return el ? kept.get(el.getAttribute("thingid")) || null : null;
+    };
     const children = new Map();
     for (const c of all) {
       const parent = parentOf(c);
@@ -114,7 +169,7 @@ String threadScript({
       const body = [...c.querySelectorAll("[slot=comment]")]
         .find((b) => b.closest("shreddit-comment") === c);
       return {kind: "t1", data: {
-        id: (c.getAttribute("thingid") || "").replace(/^t1_/, ""),
+        id: c.getAttribute("thingid").replace(/^t1_/, ""),
         author: c.getAttribute("author") || "[deleted]",
         score: Math.round(number(c.getAttribute("score"), 0)),
         body: body ? textOf(body) : "",
@@ -127,7 +182,7 @@ String threadScript({
     const body = top.querySelector("[slot=text-body]");
     const created = Date.parse(top.getAttribute("created-timestamp") || "");
     const thread = {
-      id, subreddit: sub, permalink,
+      id: "$postId", subreddit: sub, permalink,
       title: top.getAttribute("post-title") || "",
       author: top.getAttribute("author") || "[deleted]",
       created_utc: Number.isFinite(created) ? created / 1000 : Date.now() / 1000,
@@ -139,12 +194,21 @@ String threadScript({
       removed_by_category: state.includes("deleted") ? "deleted" :
         state.includes("removed") ? "moderator" : null,
     };
-    send(200, JSON.stringify([
+    send(200, stringify([
       {kind: "Listing", data: {children: [{kind: "t3", data: thread}]}},
       {kind: "Listing", data: {children: (children.get(null) || []).map(comment)}},
-    ]));
+    ]), failed);
   } catch (_) {
     send(0, "");
+  } finally {
+    window.__tldrRun = null;
   }
 })();
 ''';
+
+const _maxComments = 500;
+const _maxDepth = 4;
+const _maxRequests = 60;
+const _batchSize = 6;
+const _budgetMs = 10000;
+const _requestTimeoutMs = 5000;
