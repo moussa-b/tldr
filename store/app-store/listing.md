@@ -117,7 +117,7 @@ TL;DR+ is not affiliated with or endorsed by Reddit.
 
 | Appareil | Dossier | Taille |
 |---|---|---|
-| iPhone 6,9" | `store/app-store/<fr|en>/iphone-6.9/` (5 images) | 1320 × 2868 |
+| iPhone 6,3" | `store/app-store/<fr|en>/iphone-6.3/` (5 images) | 1206 × 2622 |
 | iPad 13" | `store/app-store/<fr|en>/ipad-13/` (4 images) | 2064 × 2752 |
 
 Apple réduit lui-même ces tailles pour les autres iPhone et iPad : pas besoin d'autres formats.

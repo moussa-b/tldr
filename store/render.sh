@@ -4,7 +4,7 @@
 #
 #   store/render.sh
 #
-# Output: store/app-store/<lang>/{iphone-6.9,ipad-13}/ and store/google-play/.
+# Output: store/app-store/<lang>/{iphone-6.3,ipad-13}/ and store/google-play/.
 set -euo pipefail
 cd "$(dirname "$0")"
 chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
@@ -47,7 +47,7 @@ for lang in fr en; do
     IFS='|' read -r name title sub <<<"$slide"
     n=$((n + 1))
     raw=raw/$lang
-    [[ -f $raw/iphone-$name.png ]] && render "app-store/$lang/iphone-6.9/0$n-$name.png" 1320 2868 "$raw/iphone-$name.png" "$title" "$sub"
+    [[ -f $raw/iphone-$name.png ]] && render "app-store/$lang/iphone-6.3/0$n-$name.png" 1206 2622 "$raw/iphone-$name.png" "$title" "$sub"
     [[ -f $raw/ipad-$name.png ]] && render "app-store/$lang/ipad-13/0$n-$name.png" 2064 2752 "$raw/ipad-$name.png" "$title" "$sub" 74
     # The Play listing is French only.
     [[ $lang == fr && -f $raw/android-$name.png ]] && render "google-play/phone/0$n-$name.png" 1080 1920 "$raw/android-$name.png" "$title" "$sub" 74
